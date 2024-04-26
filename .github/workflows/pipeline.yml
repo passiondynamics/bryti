@@ -31,7 +31,8 @@ jobs:
           pip install pipenv
           echo "[*] Syncing `Pipfile.lock`..."
           pipenv sync --dev
-      # linter stage.
+      - name: Run linter
+        run: pipenv run black --check src
       - name: Run unit tests
         run: pipenv run pytest --cov=src tests/unit/
       - name: Build artifact
@@ -50,16 +51,16 @@ jobs:
             echo "[*] Cleaning up workspace..."
             rm -r requirements.txt package/
             ls -Ahl
-#       - name: Store artifact
-#         uses: actions/upload-artifact@v4
-#   deploy:
-#     name: Deploy
-#     runs-on: ubuntu-latest
-#     steps:
+#      - name: Store artifact
+#        uses: actions/upload-artifact@v4
+#  deploy:
+#    name: Deploy
+#    runs-on: ubuntu-latest
+#    steps:
 #
-#   validate:
-#     name: Validate
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Run integration tests
-#         run: pipenv run behave
+#  validate:
+#    name: Validate
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Run integration tests
+#        run: pipenv run behave

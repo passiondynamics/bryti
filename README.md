@@ -1,6 +1,6 @@
 # bryti
 
-[Bryti](https://en.wiktionary.org/wiki/bryti) is the title given to stewards (typically royalty, like the king).
+[Bryti](https://en.wiktionary.org/wiki/bryti) (pronounced [bree-thee, /bri-thi/](http://ipa-reader.xyz/?text=bri-thi&voice=Karl)) is the title given to stewards (typically royalty, like the king).
 
 A Twitch bot to handle/manage events from different streamers.
 
