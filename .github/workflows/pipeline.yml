@@ -1,5 +1,7 @@
 name: bryti
-run-name: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+env:
+  run_name: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+run-name: ${{ env.run_name }}
 on:
   push:
     branches:
@@ -46,7 +48,7 @@ jobs:
           cp -r src package/
           echo "[*] Zipping workspace..."
           cd package/
-          zip -r ../artifact.zip .
+          zip -r ../artifact-$run_name.zip .
           cd ..
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
@@ -54,7 +56,7 @@ jobs:
       - name: Store artifact
         uses: actions/upload-artifact@v4
         with:
-          path: artifact.zip
+          path: artifact-$run_name.zip
           if-no-files-found: error
 #  deploy:
 #    name: Deploy
