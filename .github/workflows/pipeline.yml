@@ -57,7 +57,7 @@ jobs:
       - name: Store artifact
         uses: actions/upload-artifact@v4
         with:
-          path: artifact-$pipeline_id.zip
+          path: artifact-${{ env.pipeline_id }}.zip
           if-no-files-found: error
 #  deploy:
 #    name: Deploy
