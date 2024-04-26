@@ -1,5 +1,5 @@
 name: bryti
-run-name: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+run-name: ${{github.run_id}}.${{github.run_number}}.${{github.run_attempt}}
 on:
   push:
     branches:
@@ -8,12 +8,14 @@ on:
     branches:
       - main
 env:
-  pipeline_id: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+  pipeline_id: ${{github.run_id}}.${{github.run_number}}.${{github.run_attempt}}
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      artifact_filename: artifact-${{env.pipeline_id}}.zip
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,12 +59,18 @@ jobs:
       - name: Store artifact
         uses: actions/upload-artifact@v4
         with:
-          path: artifact-${{ env.pipeline_id }}.zip
+          name: ${{env.artifact_filename}}
+          path: ${{env.artifact_filename}}
           if-no-files-found: error
 #  deploy:
 #    name: Deploy
+#    needs: build
 #    runs-on: ubuntu-latest
 #    steps:
+#      - name: Download a single artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: ${{needs.build.outputs.artifact_filename}}
 #
 #  validate:
 #    name: Validate
