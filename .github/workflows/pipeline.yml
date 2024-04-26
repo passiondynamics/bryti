@@ -39,7 +39,7 @@ jobs:
       - name: Run unit tests
         run: pipenv run pytest --cov=src tests/unit/
       - name: Set artifact filename
-        run: echo "artifact_filename='artifact-$pipeline_id.zip'" >> $GITHUB_ENV
+        run: echo "artifact_filename=artifact-$pipeline_id.zip" >> $GITHUB_ENV
       - name: Build artifact
         run: |
           echo "[*] Setting up artifact workspace..."
@@ -62,6 +62,8 @@ jobs:
           name: ${{env.artifact_filename}}
           path: ${{env.artifact_filename}}
           if-no-files-found: error
+    outputs:
+      artifact_filename: ${{env.artifact_filename}}
 #  deploy:
 #    name: Deploy
 #    needs: build
