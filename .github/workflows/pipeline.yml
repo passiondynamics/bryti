@@ -38,43 +38,59 @@ jobs:
         run: pipenv run black --check src
       - name: Run unit tests
         run: pipenv run pytest --cov=src tests/unit/
+      # Because we can't derive env variables from other env variables..
       - name: Set artifact filename
-        run: echo "artifact_filename=artifact-$pipeline_id.zip" >> $GITHUB_ENV
+        run: echo "artifact_filename=artifact-$pipeline_id.zip" | tee -a $GITHUB_ENV
       - name: Build artifact
         run: |
-          echo "[*] Setting up artifact workspace..."
+          echo "[*] Setting up artifact bundle content..."
           mkdir package/
           echo "[*] Downloading dependencies..."
           pipenv requirements > requirements.txt
           pipenv run pip install -t package/ -r requirements.txt
           echo "[*] Copying source files..."
           cp -r src package/
-          echo "[*] Zipping workspace..."
+          echo "[*] Bundling artifact..."
           cd package/
           zip -r ../$artifact_filename .
           cd ..
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
           ls -Ahl
-#      - name: Store artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: ${{env.artifact_filename}}
-#          path: ${{env.artifact_filename}}
-#          if-no-files-found: error
+      - name: Store artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.artifact_filename}}
+          path: ${{env.artifact_filename}}
+          if-no-files-found: error
     outputs:
       artifact_filename: ${{env.artifact_filename}}
   deploy:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
+    env:
+      artifact_filename: ${{needs.build.outputs.artifact_filename}}
     steps:
       - name: Check outputs
-        run: echo ${{needs.build.outputs.artifact_filename}}
-#      - name: Download a single artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: ${{needs.build.outputs.artifact_filename}}
+        run: echo ${{env.artifact_filename}}
+      - name: Retrieve artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.artifact_filename}}
+      - name: Check directory
+        run: ls -Ahl
+      - name: Deploy using CFT
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: bryti-dev
+          template: cft.yml
+          parameter-overrides: >-
+            Component="bryti",
+            Env="dev",
+            ArtifactFilePath=${{env.artifact_filename}}
+          tags: '[{"Key": "env", "Value": "dev"}]'
+
 #
 #  validate:
 #    name: Validate

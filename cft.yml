@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Component:
+    Type: String
+    Description: The logical name of the Lambda being deployed/updated.
+  Env:
+    Type: String
+    Description: The environment to deploy the (updated) code into.
+    AllowedValues:
+      - dev
+      - prod
+    Default: dev
+  ArtifactFilePath:
+    Type: String
+    Description: The path to the artifact to upload.
+Resources:
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Architectures:
+        - x86_64
+      Code:
+        ZipFile: !Sub '${ArtifactFilePath}'
+      EphemeralStorage:
+        Size: 512
+      FunctionName: !Sub '${Component}-${Env}'
+      Handler: src.main.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.12
+      Tags:
+        - Key: env
+          Value: !Ref Env
+      Timeout: 30
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      RoleName: !Sub '${Component}-${Env}-role'
+      Tags:
+        - Key: env
+          Value: !Ref Env
+  LambdaPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Sub '${Component}-${Env}-policy'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Component}-${Env}:*'
+      Roles:
+        - !Ref LambdaRole
+
