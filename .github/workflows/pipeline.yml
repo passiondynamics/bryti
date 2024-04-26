@@ -14,8 +14,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      artifact_filename: artifact-${{env.pipeline_id}}.zip
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,6 +38,8 @@ jobs:
         run: pipenv run black --check src
       - name: Run unit tests
         run: pipenv run pytest --cov=src tests/unit/
+      - name: Set artifact filename
+        run: echo "artifact_filename='artifact-$pipeline_id.zip'" >> $GITHUB_ENV
       - name: Build artifact
         run: |
           echo "[*] Setting up artifact workspace..."
@@ -51,7 +51,7 @@ jobs:
           cp -r src package/
           echo "[*] Zipping workspace..."
           cd package/
-          zip -r ../artifact-$pipeline_id.zip .
+          zip -r ../$artifact_filename .
           cd ..
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
