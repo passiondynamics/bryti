@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+aws-lambda-powertools = {extras = ["aws-sdk"], version = "*"}
+pydantic = "*"
+requests = "*"
+
+[dev-packages]
+behave = "*"
+black = "*"
+pytest = "*"
+pytest-cov = "*"
+requests-mock = "*"
+
+[requires]
+python_version = "3.12"
