@@ -3,7 +3,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 
 from typing import (
     Any,
-    Dict,
+    Dict, List,
 )
 
 
