@@ -37,22 +37,25 @@ jobs:
         run: pipenv run pytest --cov=src tests/unit/
       - name: Build artifact
         run: |
-            echo "[*] Setting up artifact workspace..."
-            mkdir package/
-            echo "[*] Downloading dependencies..."
-            pipenv requirements > requirements.txt
-            pipenv run pip install -t package/ -r requirements.txt
-            echo "[*] Copying source files..."
-            cp -r src package/
-            echo "[*] Zipping workspace..."
-            cd package/
-            zip -r ../artifact.zip .
-            cd ..
-            echo "[*] Cleaning up workspace..."
-            rm -r requirements.txt package/
-            ls -Ahl
-#      - name: Store artifact
-#        uses: actions/upload-artifact@v4
+          echo "[*] Setting up artifact workspace..."
+          mkdir package/
+          echo "[*] Downloading dependencies..."
+          pipenv requirements > requirements.txt
+          pipenv run pip install -t package/ -r requirements.txt
+          echo "[*] Copying source files..."
+          cp -r src package/
+          echo "[*] Zipping workspace..."
+          cd package/
+          zip -r ../artifact.zip .
+          cd ..
+          echo "[*] Cleaning up workspace..."
+          rm -r requirements.txt package/
+          ls -Ahl
+      - name: Store artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifact.zip
+          if-no-files-found: error
 #  deploy:
 #    name: Deploy
 #    runs-on: ubuntu-latest
