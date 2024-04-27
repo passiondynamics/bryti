@@ -1,5 +1,5 @@
 name: bryti
-run-name: ${{github.run_id}}.${{github.run_number}}.${{github.run_attempt}}
+run-name: ${{github.run_id}}.${{github.run_attempt}}
 on:
   push:
     branches:
@@ -7,14 +7,19 @@ on:
   pull_request:
     branches:
       - main
-env:
-  pipeline_id: ${{github.run_id}}.${{github.run_number}}.${{github.run_attempt}}
+permissions:
+  id-token: write
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      # Because we can't derive env variables from other env variables...
+      - name: Set up pipeline vars
+        run: |
+          echo "pipeline_id=`echo ${{github.repository}} | tr / .`.${{github.run_id}}.${{github.run_attempt}}" | tee -a $GITHUB_ENV
+          echo "artifact_filename=artifact-$pipeline_id.zip" | tee -a $GITHUB_ENV
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -39,9 +44,6 @@ jobs:
         run: pipenv run black --check src
       - name: Run unit tests
         run: pipenv run pytest --cov=src tests/unit/
-      # Because we can't derive env variables from other env variables..
-      - name: Set artifact filename
-        run: echo "artifact_filename=artifact-$pipeline_id.zip" | tee -a $GITHUB_ENV
       - name: Build artifact
         run: |
           echo "[*] Setting up artifact bundle content..."
@@ -83,9 +85,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
-          role-to-assume: aws-cloudformation-github-deploy-role
-          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          role-to-assume: arn:aws:iam::637423353510:role/aws-cloudformation-github-deploy-role
+          role-session-name: ${{env.pipeline_id}}
       - name: Deploy to AWS
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
