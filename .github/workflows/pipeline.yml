@@ -70,12 +70,14 @@ jobs:
           if-no-files-found: error
     outputs:
       artifact_filename: ${{env.artifact_filename}}
+      pipeline_id: ${{env.pipeline_id}}
   deploy:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
     env:
       artifact_filename: ${{needs.build.outputs.artifact_filename}}
+      pipeline_id: ${{needs.build.outputs.pipeline_id}}
     steps:
       - name: Retrieve artifact
         uses: actions/download-artifact@v4
@@ -92,6 +94,7 @@ jobs:
         with:
           name: bryti-dev
           template: cft.yml
+          capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: >-
             Component="bryti",
             Env="dev",
