@@ -18,8 +18,12 @@ jobs:
       # Because we can't derive env variables from other env variables...
       - name: Set up pipeline vars
         run: |
-          echo "pipeline_id=`echo ${{github.repository}} | tr / .`.${{github.run_id}}.${{github.run_attempt}}" | tee -a $GITHUB_ENV
-          echo "artifact_filename=artifact-$pipeline_id.zip" | tee -a $GITHUB_ENV
+          # Calculate vars in local env first.
+          export pipeline_id=`echo ${{github.repository}} | tr / .`".${{github.run_id}}.${{github.run_attempt}}"
+          export artifact_filename="artifact-$pipeline_id.zip"
+
+          # Then export to runner env vars.
+          printf "pipeline_id=$pipeline_id\nartifact_filename=$artifact_filename\n" | tee -a $GITHUB_ENV
       - name: Checkout code
         uses: actions/checkout@v4
         with:
