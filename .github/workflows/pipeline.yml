@@ -82,7 +82,7 @@ jobs:
       repository_name: ${{env.repository_name}}
       pipeline_id: ${{env.pipeline_id}}
   deploy:
-    name: Deploy (${{needs.build.output.deployment_env}})
+    name: Deploy (${{needs.build.outputs.deployment_env}})
     needs: build
     runs-on: ubuntu-latest
     env:
