@@ -62,4 +62,7 @@ Resources:
             Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Component}-${Env}:*'
       Roles:
         - !Ref LambdaRole
+#      Tags:
+#        - Key: env
+#          Value: !Ref Env
 

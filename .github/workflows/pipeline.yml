@@ -19,11 +19,14 @@ jobs:
       - name: Set up pipeline vars
         run: |
           # Calculate vars in local env first.
-          export pipeline_id=`echo ${{github.repository}} | tr / .`".${{github.run_id}}.${{github.run_attempt}}"
-          export artifact_filename="artifact-$pipeline_id.zip"
+          rn=`echo ${{github.repository}} | cut -d/ -f2`
+          pi="${{github.repository_owner}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
+          af="artifact-$pi.zip"
 
           # Then export to runner env vars.
-          printf "pipeline_id=$pipeline_id\nartifact_filename=$artifact_filename\n" | tee -a $GITHUB_ENV
+          echo "[*] Pipeline vars:"
+          printf "artifact_filename=$af\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a $GITHUB_ENV
+          echo "${{github.event_name}}"
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -37,7 +40,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pipenv'
+          cache: 'pipenv' # TODO: try removing
       - name: Set up pipenv
         run: |
           echo "[*] Installing pipenv..."
@@ -64,16 +67,18 @@ jobs:
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
           ls -Ahl
+      # TODO: upload to S3 instead.
       - name: Store artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{env.artifact_filename}}
+          name: build
           path: |
             ${{env.artifact_filename}}
             cft.yml
           if-no-files-found: error
     outputs:
       artifact_filename: ${{env.artifact_filename}}
+      repository_name: ${{env.repository_name}}
       pipeline_id: ${{env.pipeline_id}}
   deploy:
     name: Deploy
@@ -81,12 +86,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       artifact_filename: ${{needs.build.outputs.artifact_filename}}
+      repository_name: ${{needs.build.outputs.repository_name}}
       pipeline_id: ${{needs.build.outputs.pipeline_id}}
     steps:
       - name: Retrieve artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{env.artifact_filename}}
+          name: build
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -96,11 +102,11 @@ jobs:
       - name: Deploy to AWS
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: bryti-dev
+          name: ${{env.repository_name}}-dev
           template: cft.yml
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: >-
-            Component="bryti",
+            Component="${{env.repository_name}}",
             Env="dev",
             ArtifactFilePath=${{env.artifact_filename}}
           tags: '[{"Key": "env", "Value": "dev"}]'
