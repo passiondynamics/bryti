@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+
+# For authenticating with AWS.
 permissions:
   id-token: write
 
@@ -40,7 +42,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pipenv' # TODO: try removing
       - name: Set up pipenv
         run: |
           echo "[*] Installing pipenv..."
