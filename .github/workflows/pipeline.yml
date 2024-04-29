@@ -95,9 +95,10 @@ jobs:
       repository_name: ${{env.repository_name}}
       pipeline_id: ${{env.pipeline_id}}
   deploy:
-    name: Deploy (${{needs.build.outputs.deployment_env}})
+    name: Deploy
     needs: build
     runs-on: ubuntu-latest
+    environment: ${{needs.build.outputs.deployment_env}}
     env:
       # Put these in env vars for easier reference.
       artifact_bucket_key: ${{needs.build.outputs.artifact_bucket_key}}
