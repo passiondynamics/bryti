@@ -52,7 +52,7 @@ jobs:
       - name: Run linter
         run: pipenv run black --check src
       - name: Run unit tests
-        run: pipenv run pytest --cov=src tests/unit/
+        run: pipenv run pytest --cov=src --cov-fail-under=${{vars.TEST_COVERAGE_MINIMUM}} tests/unit/
       - name: Build artifact
         run: |
           echo "[*] Downloading dependencies..."
