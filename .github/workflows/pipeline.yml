@@ -27,9 +27,9 @@ jobs:
           [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
           abk="s3://${{vars.S3_ARTIFACT_BUCKET_NAME}}/$de/$rn/"
 
-          # Then export to runner env vars.
+          # Then export to runner env vars (because they're used in following bash script steps).
           echo "[*] Pipeline vars:"
-          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a $GITHUB_ENV
+          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a "$GITHUB_ENV"
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -64,7 +64,7 @@ jobs:
           cp -r src package/
           echo "[*] Bundling artifact..."
           cd package/
-          zip -r ../$artifact_filename .
+          zip -r "../$artifact_filename" .
           cd ..
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
@@ -75,18 +75,22 @@ jobs:
           aws-region: ${{vars.AWS_REGION}}
           role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
           role-session-name: ${{env.pipeline_id}}
+      # The next two steps, for two reasons:
+      # 1. CFTs can't deploy code changes using a local zipfile.
+      # 2. Avoid using Github artifacts/storage quota.
       - name: Store artifact in S3
         run: aws s3 cp --debug "$artifact_filename" "$artifact_bucket_key"
-      - name: Store artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: |
-            ${{env.artifact_filename}}
-            cft.yml
-          if-no-files-found: error
+      - name: Write CFT content to output
+        id: write_cft
+        run: |
+          {
+            echo "cft_content<<EOF"
+            cat cft.yml
+            echo "EOF"
+          } | tee -a "$GITHUB_OUTPUT"
     outputs:
       artifact_bucket_key: ${{env.artifact_bucket_key}}
+      cft_content: ${{steps.write_cft.outputs.cft_content}}
       deployment_env: ${{env.deployment_env}}
       repository_name: ${{env.repository_name}}
       pipeline_id: ${{env.pipeline_id}}
@@ -96,14 +100,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       artifact_bucket_key: ${{needs.build.outputs.artifact_bucket_key}}
+      cft_content: ${{needs.build.outputs.cft_content}}
       deployment_env: ${{needs.build.outputs.deployment_env}}
       repository_name: ${{needs.build.outputs.repository_name}}
       pipeline_id: ${{needs.build.outputs.pipeline_id}}
     steps:
-      - name: Retrieve artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build
+      - name: Read CFT content from previous output
+        run: |
+          echo "$cft_content" > cft.yml
+          stat cft.yml
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
