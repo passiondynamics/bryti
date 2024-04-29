@@ -99,15 +99,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
+      # Put these in env vars for easier reference.
       artifact_bucket_key: ${{needs.build.outputs.artifact_bucket_key}}
-      cft_content: ${{needs.build.outputs.cft_content}}
       deployment_env: ${{needs.build.outputs.deployment_env}}
       repository_name: ${{needs.build.outputs.repository_name}}
       pipeline_id: ${{needs.build.outputs.pipeline_id}}
     steps:
+      # Pull directly from outputs (because of content size).
       - name: Read CFT content from previous output
         run: |
-          echo "$cft_content" > cft.yml
+          echo "${{needs.build.outputs.cft_content}}" > cft.yml
           stat cft.yml
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
