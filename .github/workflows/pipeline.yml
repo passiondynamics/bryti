@@ -108,7 +108,9 @@ jobs:
       # Pull directly from outputs (because of content size).
       - name: Read CFT content from previous output
         run: |
-          echo "${{needs.build.outputs.cft_content}}" > cft.yml
+          cat > cft.yml << EOL
+          ${{needs.build.outputs.cft_content}}
+          EOL
           stat cft.yml
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
