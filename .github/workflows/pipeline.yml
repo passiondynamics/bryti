@@ -25,7 +25,7 @@ jobs:
           pi="${{github.repository_owner}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
           af="artifact-$pi.zip"
           [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
-          abk="s3://${{vars.S3_ARTIFACT_BUCKET_NAME}}/$de/$rn/$af"
+          abk="$de/$rn/$af"
 
           # Then export to runner env vars (because they're used in following bash script steps).
           echo "[*] Pipeline vars:"
@@ -79,7 +79,7 @@ jobs:
       # 1. CFTs can't deploy code changes using a local zipfile.
       # 2. Avoid using Github artifacts/storage quota.
       - name: Store artifact in S3
-        run: aws s3 cp --debug "$artifact_filename" "$artifact_bucket_key"
+        run: aws s3 cp --debug "$artifact_filename" "s3://${{vars.S3_ARTIFACT_BUCKET_NAME}}/$artifact_bucket_key"
       - name: Write CFT content to output
         id: write_cft
         run: |
