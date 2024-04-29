@@ -86,7 +86,7 @@ jobs:
             cft.yml
           if-no-files-found: error
     outputs:
-      artifact_bucket_key: ${env.artifact_bucket_key}
+      artifact_bucket_key: ${{env.artifact_bucket_key}}
       deployment_env: ${{env.deployment_env}}
       repository_name: ${{env.repository_name}}
       pipeline_id: ${{env.pipeline_id}}
