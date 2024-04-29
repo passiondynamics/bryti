@@ -70,7 +70,7 @@ jobs:
           rm -r requirements.txt package/
           ls -Ahl
       - name: Store artifact in S3
-        run: aws s3 cp "$artifact_filename" "$artifact_bucket_key"
+        run: aws s3 cp --debug "$artifact_filename" "$artifact_bucket_key"
       - name: Store artifact
         uses: actions/upload-artifact@v4
         with:
