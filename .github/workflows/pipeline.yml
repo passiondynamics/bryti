@@ -108,7 +108,7 @@ jobs:
       # Pull directly from outputs (because of content size).
       - name: Read CFT content from previous output
         run: |
-          cat > cft.yml << EOL
+          cat > cft.yml <<"EOL"
           ${{needs.build.outputs.cft_content}}
           EOL
           stat cft.yml
