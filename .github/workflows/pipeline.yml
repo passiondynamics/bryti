@@ -25,10 +25,11 @@ jobs:
           pi="${{github.repository_owner}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
           af="artifact-$pi.zip"
           [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
+          abk="s3://$S3_ARTIFACT_BUCKET_NAME/$de/$rn/"
 
           # Then export to runner env vars.
           echo "[*] Pipeline vars:"
-          printf "artifact_filename=$af\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a $GITHUB_ENV
+          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a $GITHUB_ENV
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -68,7 +69,8 @@ jobs:
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
           ls -Ahl
-      # TODO: upload to S3 instead.
+      - name: Store artifact in S3
+        run: aws s3 cp "$artifact_filename" "$artifact_bucket_key"
       - name: Store artifact
         uses: actions/upload-artifact@v4
         with:
@@ -78,7 +80,7 @@ jobs:
             cft.yml
           if-no-files-found: error
     outputs:
-      artifact_filename: ${{env.artifact_filename}}
+      artifact_bucket_key: ${env.artifact_bucket_key}
       deployment_env: ${{env.deployment_env}}
       repository_name: ${{env.repository_name}}
       pipeline_id: ${{env.pipeline_id}}
@@ -87,7 +89,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      artifact_filename: ${{needs.build.outputs.artifact_filename}}
+      artifact_bucket_key: ${{needs.build.outputs.artifact_bucket_key}}
       deployment_env: ${{needs.build.outputs.deployment_env}}
       repository_name: ${{needs.build.outputs.repository_name}}
       pipeline_id: ${{needs.build.outputs.pipeline_id}}
@@ -100,7 +102,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
-          role-to-assume: arn:aws:iam::637423353510:role/aws-cloudformation-github-deploy-role
+          role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
           role-session-name: ${{env.pipeline_id}}
       - name: Deploy to AWS
         uses: aws-actions/aws-cloudformation-github-deploy@v1
@@ -111,7 +113,8 @@ jobs:
           parameter-overrides: >-
             Component="${{env.repository_name}}",
             Env="${{env.deployment_env}}",
-            ArtifactFilePath="${{env.artifact_filename}}"
+            ArtifactBucketName="${{vars.S3_ARTIFACT_BUCKET_NAME}}",
+            CodeArtifactBucketKey="${{env.artifact_bucket_key}}"
           tags: '[{"Key": "env", "Value": "${{env.deployment_env}}"}]'
 
 #
