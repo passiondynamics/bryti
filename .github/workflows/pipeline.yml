@@ -25,7 +25,7 @@ jobs:
           pi="${{github.repository_owner}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
           af="artifact-$pi.zip"
           [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
-          abk="s3://$S3_ARTIFACT_BUCKET_NAME/$de/$rn/"
+          abk="s3://${{vars.S3_ARTIFACT_BUCKET_NAME}}/$de/$rn/"
 
           # Then export to runner env vars.
           echo "[*] Pipeline vars:"
