@@ -2,7 +2,7 @@ import pytest
 
 from types import SimpleNamespace
 
-from src.main import handler
+from src.main import lambda_handler
 
 
 MOCK_CONTEXT = SimpleNamespace(**{
@@ -18,6 +18,6 @@ class TestMain():
         event = {}
         expected = {}
 
-        actual = handler(event, MOCK_CONTEXT)
+        actual = lambda_handler(event, MOCK_CONTEXT)
 
         assert actual == {}
