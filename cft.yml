@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  Component:
+    Type: String
+    Description: The logical name of the application being deployed/updated.
+  Env:
+    Type: String
+    Description: The environment to deploy into.
+    AllowedValues:
+      - dev
+      - prod
+  ArtifactBucketName:
+    Type: String
+    Description: The name of the bucket where artifacts for this application are being stored.
+  CodeArtifactBucketKey:
+    Type: String
+    Description: The key/path in the artifact bucket to the Lambda code zipfile.
+Resources:
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Architectures:
+        - x86_64
+      Code:
+        S3Bucket: !Ref ArtifactBucketName
+        S3Key: !Ref CodeArtifactBucketKey
+      EphemeralStorage:
+        Size: 512
+      FunctionName: !Sub '${Component}-${Env}'
+      Handler: src.main.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.12
+      Tags:
+        - Key: env
+          Value: !Ref Env
+      Timeout: 30
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      RoleName: !Sub '${Component}-${Env}-role'
+      Tags:
+        - Key: env
+          Value: !Ref Env
+  LambdaPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: !Sub '${Component}-${Env}-policy'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Component}-${Env}:*'
+      Roles:
+        - !Ref LambdaRole
+#      Tags:
+#        - Key: env
+#          Value: !Ref Env
+

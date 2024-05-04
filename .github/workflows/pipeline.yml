@@ -1,5 +1,5 @@
 name: bryti
-run-name: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+run-name: ${{github.run_id}}.${{github.run_attempt}}
 on:
   push:
     branches:
@@ -7,15 +7,34 @@ on:
   pull_request:
     branches:
       - main
+
+# For authenticating with AWS.
+permissions:
+  id-token: write
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      # Because we can't derive env variables from other env variables...
+      - name: Set up pipeline vars
+        run: |
+          # Calculate vars in local env first.
+          rn=`echo ${{github.repository}} | cut -d/ -f2`
+          pi="${{github.repository_owner}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
+          af="artifact-$pi.zip"
+          [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
+          abk="$de/$rn/$af"
+
+          # Then export to runner env vars (because they're used in following bash script steps).
+          echo "[*] Pipeline vars:"
+          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a "$GITHUB_ENV"
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
+            cft.yml
             Pipfile.lock
             src/
             tests/
@@ -24,42 +43,98 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pipenv'
       - name: Set up pipenv
         run: |
           echo "[*] Installing pipenv..."
           pip install pipenv
           echo "[*] Syncing `Pipfile.lock`..."
           pipenv sync --dev
-      # linter stage.
+      - name: Run linter
+        run: pipenv run black --check src
       - name: Run unit tests
-        run: pipenv run pytest --cov=src tests/unit/
+        run: pipenv run pytest --cov=src --cov-fail-under=${{vars.TEST_COVERAGE_MINIMUM}} tests/unit/
       - name: Build artifact
         run: |
-            echo "[*] Setting up artifact workspace..."
-            mkdir package/
-            echo "[*] Downloading dependencies..."
-            pipenv requirements > requirements.txt
-            pipenv run pip install -t package/ -r requirements.txt
-            echo "[*] Copying source files..."
-            cp -r src package/
-            echo "[*] Zipping workspace..."
-            cd package/
-            zip -r ../artifact.zip .
-            cd ..
-            echo "[*] Cleaning up workspace..."
-            rm -r requirements.txt package/
-            ls -Ahl
-#       - name: Store artifact
-#         uses: actions/upload-artifact@v4
-#   deploy:
-#     name: Deploy
-#     runs-on: ubuntu-latest
-#     steps:
+          echo "[*] Downloading dependencies..."
+          mkdir package/
+          pipenv requirements > requirements.txt
+          pipenv run pip install -t package/ -r requirements.txt
+          echo "[*] Copying source files..."
+          ls src
+          cp -r src package/
+          echo "[*] Bundling artifact..."
+          cd package/
+          zip -r "../$artifact_filename" .
+          cd ..
+          echo "[*] Cleaning up workspace..."
+          rm -r requirements.txt package/
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{vars.AWS_REGION}}
+          role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
+          role-session-name: ${{env.pipeline_id}}
+      # The next two steps, for two reasons:
+      # 1. CFTs can't deploy code changes using a local zipfile.
+      # 2. Avoid using Github artifacts/storage quota.
+      - name: Store artifact in S3
+        run: aws s3 cp "$artifact_filename" "s3://${{vars.S3_ARTIFACT_BUCKET_NAME}}/$artifact_bucket_key"
+      - name: Write CFT content to output
+        id: write_cft
+        run: |
+          {
+            echo "cft_content<<EOF"
+            cat cft.yml
+            echo "EOF"
+          } | tee -a "$GITHUB_OUTPUT"
+    outputs:
+      artifact_bucket_key: ${{env.artifact_bucket_key}}
+      cft_content: ${{steps.write_cft.outputs.cft_content}}
+      deployment_env: ${{env.deployment_env}}
+      repository_name: ${{env.repository_name}}
+      pipeline_id: ${{env.pipeline_id}}
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{needs.build.outputs.deployment_env}}
+    env:
+      # Put these in env vars for easier reference.
+      artifact_bucket_key: ${{needs.build.outputs.artifact_bucket_key}}
+      deployment_env: ${{needs.build.outputs.deployment_env}}
+      repository_name: ${{needs.build.outputs.repository_name}}
+      pipeline_id: ${{needs.build.outputs.pipeline_id}}
+    steps:
+      # Pull directly from outputs (because of content size).
+      - name: Read CFT content from previous output
+        run: |
+          cat > cft.yml <<"EOL"
+          ${{needs.build.outputs.cft_content}}
+          EOL
+          stat cft.yml
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{vars.AWS_REGION}}
+          role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
+          role-session-name: ${{env.pipeline_id}}
+      - name: Deploy to AWS
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: ${{env.repository_name}}-${{env.deployment_env}}
+          template: cft.yml
+          capabilities: CAPABILITY_NAMED_IAM
+          parameter-overrides: >-
+            Component="${{env.repository_name}}",
+            Env="${{env.deployment_env}}",
+            ArtifactBucketName="${{vars.S3_ARTIFACT_BUCKET_NAME}}",
+            CodeArtifactBucketKey="${{env.artifact_bucket_key}}"
+          tags: '[{"Key": "env", "Value": "${{env.deployment_env}}"}]'
+
 #
-#   validate:
-#     name: Validate
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Run integration tests
-#         run: pipenv run behave
+#  validate:
+#    name: Validate
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Run integration tests
+#        run: pipenv run behave

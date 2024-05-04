@@ -11,6 +11,6 @@ logger = Logger(service="bryti")
 
 
 @logger.inject_lambda_context()
-def handler(event: Dict[str, Any], context: LambdaContext):
+def lambda_handler(event: Dict[str, Any], context: LambdaContext):
     logger.info("Lambda triggered", event=event, context=context)
     return {}
