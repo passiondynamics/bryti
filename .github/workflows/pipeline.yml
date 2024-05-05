@@ -109,7 +109,7 @@ jobs:
       cft_content: ${{steps.write_cft.outputs.cft_content}}
   deploy:
     name: Deploy
-    needs: build
+    needs: [init, build]
     runs-on: ubuntu-latest
     environment: ${{needs.init.outputs.deployment_env}}
     env:
