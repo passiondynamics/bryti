@@ -30,10 +30,8 @@ Resources:
           "Fn::ForEach::EnvVarLoop":
             - EnvVarKeyPair
             - ["env=dev"]
-            - "env": Fn::Select:
-              - 1
-              - Fn::Split: ["=", "$EnvVarKeyPair"]
-              
+            - - "env"
+              - Fn::Select: [1, Fn::Split: ["=", "$EnvVarKeyPair"]]
       EphemeralStorage:
         Size: 512
       FunctionName: !Sub '${Component}-${Env}'

@@ -44,10 +44,6 @@ jobs:
       # Use env vars for easier repeated reference.
       artifact_filename: ${{needs.init.outputs.artifact_filename}}
     steps:
-      - name: Debugging
-        run: |
-          echo "${{toJson(github)}}"
-          echo "${{toJson(vars)}}"
       - name: Checkout code
         uses: actions/checkout@v4
         with:
