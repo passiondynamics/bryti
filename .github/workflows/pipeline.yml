@@ -17,6 +17,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Debugging
+        run: |
+          echo ${{toJson(github)}}
+          echo ${{toJson(vars)}}
       # Because we can't derive env variables from other env variables...
       - name: Set up pipeline vars
         run: |
