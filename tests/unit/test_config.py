@@ -39,14 +39,16 @@ class TestConfig:
             (["API_KEY"], '{"API_KEY": "mock-value", "BASE_URL": "mock-value-2"}', {"API_KEY": "mock-value"}),
         ],
     )
-    def test_load_env_vars_file(self, env_var_keys, env_json_contents, expected, monkeypatch):
+    @patch("src.config.open")
+    def test_load_env_vars_file(self, mock_open, env_var_keys, env_json_contents, expected, monkeypatch):
+        mock_file = MagicMock()
+        mock_file.read.return_value = env_json_contents
+        mock_open.return_value.__enter__.return_value = mock_file
         with patch("src.config.ENV_VAR_KEYS", env_var_keys):
-            with patch("src.config.open", mock_open(read_data=env_json_contents)) as mock_file:
-                actual = load_env_vars()
+            actual = load_env_vars()
 
-                assert actual == expected
-                # Not working on Github runner.
-                # mock_file.assert_called_with("env.json", "r")
+            assert actual == expected
+            assert mock_file.read.call_count == 1
 
     @pytest.mark.parametrize(
         "args, expected",
@@ -63,5 +65,4 @@ class TestConfig:
         mock_open.return_value.__enter__.return_value = mock_file
         with patch("sys.argv", args):
             main()
-            # Not working on Github runner.
-            # mock_file.write.assert_called_with(expected)
+            mock_file.write.assert_called_with(expected)
