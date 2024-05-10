@@ -104,7 +104,7 @@ jobs:
       - name: Write env vars to output
         id: write_env_vars
         run: |
-          ENV_VARS='${{toJson(vars)}}' python src/config.py --stringify
+          ENV_VARS='${{toJson(vars)}}' python src/config.py --no-pretty
           ls -Ahl
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
