@@ -101,8 +101,15 @@ jobs:
             cat cft.yml
             echo "EOF"
           } | tee -a "$GITHUB_OUTPUT"
+      - name: Write env vars to output
+        id: write_env_vars
+        run: |
+          ENV_VARS='${{vars}}' python src/config --no-pretty
+          ls -Ahl
+          echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
       cft_content: ${{steps.write_cft.outputs.cft_content}}
+      env_vars: ${{steps.write_env_vars.outputs.env_vars}}
   deploy:
     name: Deploy
     needs: [init, build]
@@ -137,6 +144,7 @@ jobs:
             Env="${{env.deployment_env}}",
             ArtifactBucketName="${{vars.S3_ARTIFACT_BUCKET_NAME}}",
             CodeArtifactBucketKey="${{env.artifact_bucket_key}}"
+            EnvVars="${{needs.build.outputs.env_vars}}"
           tags: '[{"Key": "env", "Value": "${{env.deployment_env}}"}]'
 
 #

@@ -16,6 +16,9 @@ Parameters:
   CodeArtifactBucketKey:
     Type: String
     Description: The key/path in the artifact bucket to the Lambda code zipfile.
+  EnvVars:
+    Type: String
+    Description: The encoded environment variable key-pairs to attach to the Lambda.
 Resources:
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
@@ -27,11 +30,13 @@ Resources:
         S3Key: !Ref CodeArtifactBucketKey
       Environment:
         Variables:
-          "Fn::ForEach::EnvVarLoop":
-            - EnvVarKeyPair
-            - ["env=dev"]
-            - - "env"
-              - Fn::Select: [1, Fn::Split: ["=", "$EnvVarKeyPair"]]
+          # See https://github.com/aws-cloudformation/cfn-language-discussion/issues/55
+#          "Fn::ForEach::EnvVarLoop":
+#            - EnvVarKey
+#            - ["env"]
+#            - Name: Fn::Select: [0, Fn::Split: ["=", "$EnvVarKeyPair"]]
+#              Value: Fn::Select: [1, Fn::Split: ["=", "$EnvVarKeyPair"]]
+          ENV_VARS: !Ref EnvVars
       EphemeralStorage:
         Size: 512
       FunctionName: !Sub '${Component}-${Env}'
