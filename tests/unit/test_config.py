@@ -41,7 +41,7 @@ class TestConfig:
     )
     def test_load_env_vars_file(self, env_var_keys, env_json_contents, expected, monkeypatch):
         with patch("src.config.ENV_VAR_KEYS", env_var_keys):
-            with patch("builtins.open", mock_open(read_data=env_json_contents)) as mock_file:
+            with patch("src.config.open", mock_open(read_data=env_json_contents)) as mock_file:
                 actual = load_env_vars()
 
                 assert actual == expected
@@ -54,7 +54,7 @@ class TestConfig:
             (["", "--no-pretty"], '{"API_KEY":"mock-value"}'),
         ],
     )
-    @patch("builtins.open")
+    @patch("src.config.open")
     @patch("src.config.load_env_vars")
     def test_main(self, mock_load_env_vars, mock_open, args, expected):
         mock_load_env_vars.return_value = {"API_KEY": "mock-value"}
