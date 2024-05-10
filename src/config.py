@@ -34,7 +34,7 @@ def main():
     env_vars = load_env_vars()
     if sys.argv[1:] == ["--stringify"]:
         # Double-encode compacted JSON.
-        output = json.dumps(json.dumps(env_vars, separators=(",", ":")))
+        output = json.dumps(env_vars, separators=(",", ":"))
     else:
         output = json.dumps(env_vars, indent=4)
 

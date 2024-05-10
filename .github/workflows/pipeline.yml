@@ -144,7 +144,7 @@ jobs:
             Env="${{env.deployment_env}}",
             ArtifactBucketName="${{vars.S3_ARTIFACT_BUCKET_NAME}}",
             CodeArtifactBucketKey="${{env.artifact_bucket_key}}"
-            EnvVars='${{needs.build.outputs.env_vars}}'
+            EnvVars='${{toJson(needs.build.outputs.env_vars)}}'
           tags: '[{"Key": "env", "Value": "${{env.deployment_env}}"}]'
 
 #
