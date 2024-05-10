@@ -35,8 +35,10 @@ python src/config.py
 
 <details>
 <summary>Two notes about the above step ^</summary>
+
 1. This generates an `env.json` file in the root directory of your local repo, you'll need to fill this out as needed if you want to run code using those variables locally.
 2. `env.json` is ignored by this repo, meaning that any changes you make to it, will (and should!) stay only on your local machine.
+
 </details>
 
 
