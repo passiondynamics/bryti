@@ -30,7 +30,7 @@ def load_env_vars():
     return {k: env_vars.get(k) for k in ENV_VAR_KEYS}
 
 
-if __name__ == "__main__":
+def main():
     env_vars = load_env_vars()
     if sys.argv[1:] == ["--no-pretty"]:
         output = json.dumps(env_vars, separators=(",", ":"))
@@ -39,3 +39,7 @@ if __name__ == "__main__":
 
     with open(ENV_VARS_FILEPATH, "w") as f:
         f.write(output)
+
+
+if __name__ == "__main__":
+    main()
