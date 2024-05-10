@@ -32,9 +32,8 @@ def load_env_vars():
 
 def main():
     env_vars = load_env_vars()
-    if sys.argv[1:] == ["--stringify"]:
-        # Double-encode compacted JSON.
-        output = json.dumps(json.dumps(env_vars, separators=(",", ":")))
+    if sys.argv[1:] == ["--no-pretty"]:
+        output = json.dumps(env_vars, separators=(",", ":"))
     else:
         output = json.dumps(env_vars, indent=4)
 

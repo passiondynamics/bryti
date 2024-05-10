@@ -60,7 +60,7 @@ class TestConfig:
         "args, expected",
         [
             ([""], '{\n    "API_KEY": "mock-value"\n}'),
-            (["", "--stringify"], r'''"{\"API_KEY\":\"mock-value\"}"'''),
+            (["", "--no-pretty"], '{"API_KEY":"mock-value"}'),
         ],
     )
     @patch("src.config.open")
