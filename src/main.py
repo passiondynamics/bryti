@@ -24,7 +24,7 @@ env_vars = load_env_vars()
 twitch_service = TwitchService()
 
 
-@app.get("/bryti")
+@app.post("/bryti")
 def bryti_handler() -> Response:
     # Determine event source by request headers.
     try:
@@ -47,4 +47,6 @@ def bryti_handler() -> Response:
 @logger.inject_lambda_context()
 def lambda_handler(event: Dict[str, Any], context: LambdaContext):
     logger.info("Lambda triggered", event=event, context=context)
-    return app.resolve(event, context)
+    response = app.resolve(event, context)
+    logger.info("Returning response", response=response)
+    return response

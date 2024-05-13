@@ -25,7 +25,7 @@ class TestMain:
         )
         event = {
             "requestContext": {
-                "http": {"method": "GET"},
+                "http": {"method": "POST"},
                 "stage": "$default",
             },
             "rawPath": "/bryti",
@@ -51,7 +51,7 @@ class TestMain:
     def test_bryti_handler_default(self, mock_twitch_service):
         event = {
             "requestContext": {
-                "http": {"method": "GET"},
+                "http": {"method": "POST"},
                 "stage": "$default",
             },
             "rawPath": "/bryti",
