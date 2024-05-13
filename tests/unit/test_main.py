@@ -13,7 +13,7 @@ MOCK_CONTEXT = SimpleNamespace(**{
 })
 
 
-class TestMain():
+class TestMain:
     def test_main(self):
         event = {}
         expected = {}
@@ -21,3 +21,4 @@ class TestMain():
         actual = lambda_handler(event, MOCK_CONTEXT)
 
         assert actual == {}
+
