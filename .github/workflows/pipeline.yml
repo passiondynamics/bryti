@@ -105,7 +105,6 @@ jobs:
         id: write_env_vars
         run: |
           ENV_VARS='${{toJson(vars)}}' python src/config.py --no-pretty
-          ls -Ahl
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
       cft_content: ${{steps.write_cft.outputs.cft_content}}

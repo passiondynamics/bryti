@@ -13,7 +13,7 @@ class TwitchEventType(str, Enum):
 
 
 class TwitchHeaders(BaseModel):
-    event_type: TwitchEventType = Field(alias="Twitch-Eventsub-Message-Type")
+    event_type: TwitchEventType = Field(alias="twitch-eventsub-message-type")
 
 
 class TwitchChallengeBody(BaseModel):
