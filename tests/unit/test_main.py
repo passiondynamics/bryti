@@ -30,7 +30,7 @@ class TestMain:
             },
             "rawPath": "/bryti",
             "headers": {
-                "Twitch-Eventsub-Message-Type": "webhook_callback_verification",
+                "twitch-eventsub-message-type": "webhook_callback_verification",
             },
             "body": '{"challenge": "mock-challenge"}',
         }
