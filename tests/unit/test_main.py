@@ -1,8 +1,10 @@
+from aws_lambda_powertools.event_handler import Response
 import pytest
 
 from types import SimpleNamespace
+from unittest.mock import patch
 
-from src.main import lambda_handler
+from src import main
 
 
 MOCK_CONTEXT = SimpleNamespace(**{
@@ -14,11 +16,56 @@ MOCK_CONTEXT = SimpleNamespace(**{
 
 
 class TestMain:
-    def test_main(self):
-        event = {}
-        expected = {}
+    @patch("src.main.twitch_service")
+    def test_bryti_handler_twitch(self, mock_twitch_service):
+        mock_twitch_service.handle_event.return_value = Response(
+            status_code=200,
+            content_type="text/plain",
+            body="mock-challenge",
+        )
+        event = {
+            "requestContext": {
+                "http": {"method": "GET"},
+                "stage": "$default",
+            },
+            "rawPath": "/bryti",
+            "headers": {
+                "Twitch-Eventsub-Message-Type": "webhook_callback_verification",
+            },
+            "body": '{"challenge": "mock-challenge"}',
+        }
+        expected = {
+            "isBase64Encoded": False,
+            "statusCode": 200,
+            "body": "mock-challenge",
+            "headers": {"Content-Type": "text/plain"},
+            "cookies": [],
+        }
 
-        actual = lambda_handler(event, MOCK_CONTEXT)
+        actual = main.app.resolve(event, MOCK_CONTEXT)
 
-        assert actual == {}
+        assert actual == expected
+        assert mock_twitch_service.handle_event.call_count == 1
+
+    @patch("src.main.twitch_service")
+    def test_bryti_handler_default(self, mock_twitch_service):
+        event = {
+            "requestContext": {
+                "http": {"method": "GET"},
+                "stage": "$default",
+            },
+            "rawPath": "/bryti",
+        }
+        expected = {
+            "isBase64Encoded": False,
+            "statusCode": 204,
+            "body": "{}",
+            "headers": {"Content-Type": "application/json"},
+            "cookies": [],
+        }
+
+        actual = main.app.resolve(event, MOCK_CONTEXT)
+
+        assert actual == expected
+        assert mock_twitch_service.handle_event.call_count == 0
 

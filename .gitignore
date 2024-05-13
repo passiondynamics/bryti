@@ -1,4 +1,5 @@
 *.swp
+*.swo
 .coverage
 __pycache__/
 env.json
