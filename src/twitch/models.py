@@ -11,6 +11,13 @@ from typing import (
     TypeVar,
 )
 
+from src.twitch.event_models import (
+    TwitchChannelChatMessage,
+    TwitchChannelUpdate,
+)
+
+
+# --- General request event models. ---
 
 class TwitchEventType(str, Enum):
     CHALLENGE = "webhook_callback_verification"
@@ -28,28 +35,13 @@ class TwitchHeaders(BaseModel):
     retry_count: int = Field(alias="twitch-eventsub-message-retry")
 
 
-class TwitchChallengeBody(BaseModel):
-    challenge: str
-
-
-# fmt: off
-T = TypeVar("T")
-class TwitchResponse(BaseModel, Generic[T]):
-    data: T
-    total: int
-    total_cost: int
-    max_total_cost: int
-
-# fmt: on
-
-
 class TwitchEventSubscriptionCondition(BaseModel):
     broadcaster_user_id: Optional[str]
+    user_id: Optional[str]
 
 
 #    broadcaster_id: Optional[str]
 #    moderator_user_id: Optional[str]
-#    user_id: Optional[str]
 #    from_broadcaster_user_id: Optional[str]
 #    to_broadcaster_user_id: Optional[str]
 #    reward_id: Optional[str]
@@ -75,3 +67,32 @@ class TwitchEventSubscription(BaseModel):
     condition: TwitchEventSubscriptionCondition
     created_at: str
     transport: TwitchEventSubscriptionTransport
+
+
+# --- Specific request event models (by TwitchEventType) ---
+
+class TwitchChallengeBody(BaseModel):
+    challenge: str
+    subscription: TwitchEventSubscription
+
+
+class TwitchNotificationBody(BaseModel):
+    subscription: TwitchEventSubscription
+    event: TwitchChannelUpdate | TwitchChannelChatMessage
+
+
+class TwitchRevocationBody(BaseModel):
+    subscription: TwitchEventSubscription
+
+
+# --- General API response models ---
+
+# fmt: off
+T = TypeVar("T")
+class TwitchResponse(BaseModel, Generic[T]):
+    data: T
+    total: int
+    total_cost: int
+    max_total_cost: int
+
+# fmt: on

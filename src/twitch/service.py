@@ -58,6 +58,7 @@ class TwitchService:
         """
         challenge_body = TwitchChallengeBody.model_validate_json(body)
         challenge = challenge_body.challenge
+
         logger.info("Responding to challenge event", challenge=challenge)
         return Response(
             status_code=HTTPStatus.OK,
@@ -69,6 +70,9 @@ class TwitchService:
         """
         Handle a subscription notification event.
         """
+        notification = TwitchNotificationBody.model_validate_json(body)
+        logger.info("Received notification": notification=notification)
+
         logger.info("Acknowledging notification event")
         return Response(
             status_code=HTTPStatus.NO_CONTENT,
@@ -80,6 +84,8 @@ class TwitchService:
         """
         Handle a subscription revocation event.
         """
+        # TODO.
+
         logger.info("Acknowledging revocation event")
         return Response(
             status_code=HTTPStatus.NO_CONTENT,
