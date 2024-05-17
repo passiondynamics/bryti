@@ -30,7 +30,13 @@ class TestMain:
             },
             "rawPath": "/bryti",
             "headers": {
-                "twitch-eventsub-message-type": "webhook_callback_verification",
+                "twitch-eventsub-message-id": "mock-id",
+                "twitch-eventsub-message-type": "notification",
+                "twitch-eventsub-subscription-type": "mock-event-type",
+                "twitch-eventsub-subscription-version": "0",
+                "twitch-eventsub-message-timestamp": "mock-timestamp",
+                "twitch-eventsub-message-signature": "mock-signature",
+                "twitch-eventsub-message-retry": "0",
             },
             "body": '{"challenge": "mock-challenge"}',
         }
@@ -58,7 +64,7 @@ class TestMain:
         }
         expected = {
             "isBase64Encoded": False,
-            "statusCode": 204,
+            "statusCode": 401,
             "body": "{}",
             "headers": {"Content-Type": "application/json"},
             "cookies": [],

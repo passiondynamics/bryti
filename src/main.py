@@ -15,7 +15,10 @@ from typing import (
 
 from src.config import load_env_vars
 from src.twitch.models import TwitchHeaders
-from src.twitch.service import TwitchService
+from src.twitch.service import (
+    TwitchService,
+    TwitchSignatureMismatchError,
+)
 
 
 logger = Logger(service="bryti")
@@ -24,21 +27,41 @@ env_vars = load_env_vars()
 twitch_service = TwitchService()
 
 
+class UnknownEventSourceError(Exception):
+    pass
+
+
 @app.post("/bryti")
 def bryti_handler() -> Response:
     # Determine event source by request headers.
     try:
         twitch_headers = TwitchHeaders.model_validate(app.current_event.headers)
         return twitch_service.handle_event(
-            twitch_headers.event_type,
+            twitch_headers,
             app.current_event.decoded_body,
         )
     except ValidationError:
         pass
 
-    # If no matching event source found, hand back a default response.
+    # If no matching event source found, raise an error.
+    raise UnknownEventSourceError
+
+
+@app.exception_handler(UnknownEventSourceError)
+def unknown_event_source(e: UnknownEventSourceError) -> Response:
+    logger.exception(e)
     return Response(
-        status_code=HTTPStatus.NO_CONTENT,
+        status_code=HTTPStatus.UNAUTHORIZED,
+        content_type=content_types.APPLICATION_JSON,
+        body="{}",
+    )
+
+
+@app.exception_handler(TwitchSignatureMismatchError)
+def on_signature_mismatch(e: TwitchSignatureMismatchError) -> Response:
+    logger.exception(e)
+    return Response(
+        status_code=HTTPStatus.FORBIDDEN,
         content_type=content_types.APPLICATION_JSON,
         body="{}",
     )

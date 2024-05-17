@@ -4,6 +4,14 @@
 
 A Twitch bot to handle/manage events from different streamers.
 
+## TODOs
+
+- ~~Script to make subscribing to events easier~~
+  - Could turn into API endpoint
+- On subscription revocation, notify on discord.
+- `bryti` command channel in Discord (manage `bryti`)
+- Discord integration
+
 ## Contributing
 
 All steps prefixed with `(required)` must be done to fully setup your local repository.
@@ -30,7 +38,7 @@ pipenv sync --dev
 
 (required) Set up local environment variables:
 ```bash
-python src/config.py
+python -m src/config.py
 ```
 
 <details>
@@ -47,6 +55,13 @@ Add a new dependency:
 pipenv install {package}
 ```
 
+### Code style
+
+Run the linter:
+```bash
+black src/
+```
+
 ### Unit tests
 
 (make sure you're in the virtual env and at root folder of the repo)
@@ -58,7 +73,7 @@ pytest tests/unit
 
 Run unit tests with coverage information:
 ```bash
-pytest --cov=src tests/unit
+pytest --cov=src --cov-fail-under=90 tests/unit
 ```
 
 <!--
