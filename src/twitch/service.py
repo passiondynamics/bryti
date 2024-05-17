@@ -44,7 +44,8 @@ class TwitchService:
         """
         Validate the authenticity of the event (originated from Twitch) using the provided signature.
         """
-        secret = f"bryti.{headers.subscription_type}.{headers.subscription_version}".encode("UTF-8")
+        secret_str = f"bryti.{headers.subscription_type}.{headers.subscription_version}"
+        secret = secret_str.encode("UTF-8")
         message = f"{headers.event_id}{headers.timestamp}{body}".encode("UTF-8")
         digest = hmac.new(secret, message, hashlib.sha256).hexdigest()
         signature = f"sha256={digest}"
