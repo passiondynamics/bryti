@@ -19,6 +19,7 @@ from src.twitch.event_models import (
 
 # --- General request event models. ---
 
+
 class TwitchEventType(str, Enum):
     CHALLENGE = "webhook_callback_verification"
     NOTIFICATION = "notification"
@@ -71,6 +72,7 @@ class TwitchEventSubscription(BaseModel):
 
 # --- Specific request event models (by TwitchEventType) ---
 
+
 class TwitchChallengeBody(BaseModel):
     challenge: str
     subscription: TwitchEventSubscription
@@ -86,6 +88,7 @@ class TwitchRevocationBody(BaseModel):
 
 
 # --- General API response models ---
+
 
 # fmt: off
 T = TypeVar("T")

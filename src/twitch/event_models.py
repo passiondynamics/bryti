@@ -10,6 +10,7 @@ from typing import (
 
 # --- channel.chat.message ---
 
+
 class TwitchCheermote:
     prefix: str
     bits: int
@@ -83,4 +84,6 @@ class TwitchChannelChatMessage:
 
 # --- channel.update ---
 
+
 class TwitchChannelUpdate:
+    pass
