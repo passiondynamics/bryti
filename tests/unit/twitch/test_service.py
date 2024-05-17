@@ -43,7 +43,7 @@ class TestTwitchService:
             "twitch-eventsub-subscription-type": "mock-subscription-type",
             "twitch-eventsub-subscription-version": "0",
             "twitch-eventsub-message-timestamp": "mock-timestamp",
-            "twitch-eventsub-message-signature": "sha256=23a5c9e5fa220ac96c5d6c193896feb8f1d137fc1317f327f523758566407cb3",
+            "twitch-eventsub-message-signature": "sha256=c0fe54c3d369473bcc76f00aabd90ce62b7497bece3add998cf99965d3228d2f",
             "twitch-eventsub-message-retry": "0",
         })
         body = "mock-body"
