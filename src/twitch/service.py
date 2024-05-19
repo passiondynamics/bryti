@@ -11,9 +11,11 @@ from http import HTTPStatus
 import json
 
 from src.twitch.models import (
-    TwitchChallengeBody,
+    TwitchChallengeEvent,
     TwitchEventType,
     TwitchHeaders,
+    TwitchNotificationEvent,
+    TwitchRevocationEvent,
 )
 
 
@@ -56,10 +58,10 @@ class TwitchService:
         """
         Handle a callback verification challenge event.
         """
-        challenge_body = TwitchChallengeBody.model_validate_json(body)
-        challenge = challenge_body.challenge
+        event = TwitchChallengeEvent.model_validate_json(body)
+        logger.info("Handling challenge", event=event)
 
-        logger.info("Responding to challenge event", challenge=challenge)
+        challenge = event.challenge
         return Response(
             status_code=HTTPStatus.OK,
             content_type=content_types.TEXT_PLAIN,
@@ -70,10 +72,9 @@ class TwitchService:
         """
         Handle a subscription notification event.
         """
-        notification = TwitchNotificationBody.model_validate_json(body)
-        logger.info("Received notification": notification=notification)
+        event = TwitchNotificationEvent.model_validate_json(body)
+        logger.info("Handling notification", event=event)
 
-        logger.info("Acknowledging notification event")
         return Response(
             status_code=HTTPStatus.NO_CONTENT,
             content_type=content_types.APPLICATION_JSON,
@@ -84,9 +85,11 @@ class TwitchService:
         """
         Handle a subscription revocation event.
         """
-        # TODO.
+        event = TwitchRevocationEvent.model_validate_json(body)
+        logger.info("Handling revocation", event=event)
 
-        logger.info("Acknowledging revocation event")
+        # TODO: send Discord notification.
+
         return Response(
             status_code=HTTPStatus.NO_CONTENT,
             content_type=content_types.APPLICATION_JSON,

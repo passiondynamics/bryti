@@ -13,7 +13,8 @@ from typing import (
 
 from src.twitch.event_models import (
     TwitchChannelChatMessage,
-    TwitchChannelUpdate,
+    TwitchStreamOffline,
+    TwitchStreamOnline,
 )
 
 
@@ -37,8 +38,8 @@ class TwitchHeaders(BaseModel):
 
 
 class TwitchEventSubscriptionCondition(BaseModel):
-    broadcaster_user_id: Optional[str]
-    user_id: Optional[str]
+    broadcaster_user_id: Optional[str] = None
+    user_id: Optional[str] = None
 
 
 #    broadcaster_id: Optional[str]
@@ -56,13 +57,13 @@ class TwitchEventSubscriptionCondition(BaseModel):
 
 class TwitchEventSubscriptionTransport(BaseModel):
     method: str
-    callback: Optional[str]
+    callback: str
 
 
 class TwitchEventSubscription(BaseModel):
-    subscription_id: str = Field(alias="id")
+    id: str
     subscription_type: str = Field(alias="type")
-    version: str
+    version: int
     status: str
     cost: int
     condition: TwitchEventSubscriptionCondition
@@ -73,17 +74,17 @@ class TwitchEventSubscription(BaseModel):
 # --- Specific request event models (by TwitchEventType) ---
 
 
-class TwitchChallengeBody(BaseModel):
+class TwitchChallengeEvent(BaseModel):
     challenge: str
     subscription: TwitchEventSubscription
 
 
-class TwitchNotificationBody(BaseModel):
+class TwitchNotificationEvent(BaseModel):
     subscription: TwitchEventSubscription
-    event: TwitchChannelUpdate | TwitchChannelChatMessage
+    event: TwitchChannelChatMessage | TwitchStreamOffline | TwitchStreamOnline
 
 
-class TwitchRevocationBody(BaseModel):
+class TwitchRevocationEvent(BaseModel):
     subscription: TwitchEventSubscription
 
 

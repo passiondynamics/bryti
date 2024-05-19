@@ -11,49 +11,49 @@ from typing import (
 # --- channel.chat.message ---
 
 
-class TwitchCheermote:
+class TwitchCheermote(BaseModel):
     prefix: str
     bits: int
     tier: int
 
 
-class TwitchEmote:
-    emote_id: str = Field(alias="id")
+class TwitchEmote(BaseModel):
+    id: str
     emote_set_id: str
     owner_id: str
     emote_format: str = Field(alias="format")
 
 
-class TwitchMention:
+class TwitchMention(BaseModel):
     user_id: str
     user_name: str
     user_login: str
 
 
-class TwitchMessageFragment:
+class TwitchMessageFragment(BaseModel):
     fragment_type: str = Field(alias="type")
     text: str
-    cheermote: Optional[TwitchCheermote]
-    emote: Optional[TwitchEmote]
-    mention: Optional[TwitchMention]
+    cheermote: Optional[TwitchCheermote] = None
+    emote: Optional[TwitchEmote] = None
+    mention: Optional[TwitchMention] = None
 
 
-class TwitchMessage:
+class TwitchMessage(BaseModel):
     text: str
     fragments: List[TwitchMessageFragment]
 
 
-class TwitchBadges:
+class TwitchBadges(BaseModel):
     set_id: str
-    badge_id: str = Field(alias="id")
+    id: str
     info: str
 
 
-class TwitchCheer:
+class TwitchCheer(BaseModel):
     bits: int
 
 
-class TwitchReply:
+class TwitchReply(BaseModel):
     parent_message_id: str
     parent_message_body: str
     parent_user_id: str
@@ -65,7 +65,7 @@ class TwitchReply:
     thread_user_login: str
 
 
-class TwitchChannelChatMessage:
+class TwitchChannelChatMessage(BaseModel):
     broadcaster_user_id: str
     broadcaster_user_name: str
     broadcaster_user_login: str
@@ -76,14 +76,28 @@ class TwitchChannelChatMessage:
     message: List[TwitchMessage]
     message_type: str
     badges: List[TwitchBadges]
-    cheer: Optional[TwitchCheer]
+    cheer: Optional[TwitchCheer] = None
     color: str
-    reply: Optional[TwitchReply]
-    channel_points_custom_reward_id: Optional[str]
+    reply: Optional[TwitchReply] = None
+    channel_points_custom_reward_id: Optional[str] = None
 
 
-# --- channel.update ---
+# --- stream.online ---
 
 
-class TwitchChannelUpdate:
-    pass
+class TwitchStreamOnline(BaseModel):
+    broadcaster_user_id: str
+    broadcaster_user_login: str
+    broadcaster_user_name: str
+    id: str
+    stream_type: str = Field(alias="type")
+    started_at: str
+
+
+# --- stream.offline ---
+
+
+class TwitchStreamOffline(BaseModel):
+    broadcaster_user_id: str
+    broadcaster_user_login: str
+    broadcaster_user_name: str

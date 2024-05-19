@@ -43,6 +43,8 @@ def bryti_handler() -> Response:
     except ValidationError:
         pass
 
+    # TODO: implement Discord service.
+
     # If no matching event source found, raise an error.
     raise UnknownEventSourceError
 

@@ -2,4 +2,4 @@
 *.swo
 .coverage
 __pycache__/
-env.json
+env*.json

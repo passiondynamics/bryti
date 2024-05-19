@@ -4,21 +4,13 @@
 
 A Twitch bot to handle/manage events from different streamers.
 
-## TODOs
-
-- ~~Script to make subscribing to events easier~~
-  - Could turn into API endpoint
-- On subscription revocation, notify on discord.
-- `bryti` command channel in Discord (manage `bryti`)
-- Discord integration
-
 ## Contributing
 
 All steps prefixed with `(required)` must be done to fully setup your local repository.
 
 ### Download
 
-(required) Clone the repo and enter it:
+**(required)** Clone the repo and enter it:
 ```bash
 git clone git@github.com:passiondynamics/bryti.git
 cd bryti/
@@ -26,12 +18,12 @@ cd bryti/
 
 ### Virtual environment
 
-(required) Enter(/create) the virtual env:
+`(required)` Enter(/create) the virtual env:
 ```bash
 pipenv shell
 ```
 
-(required) Install all dependencies listed in `Pipfile.lock`:
+*(required)* Install all dependencies listed in `Pipfile.lock`:
 ```bash
 pipenv sync --dev
 ```
