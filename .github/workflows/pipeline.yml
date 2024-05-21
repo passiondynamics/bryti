@@ -64,7 +64,7 @@ jobs:
           echo "[*] Syncing `Pipfile.lock`..."
           pipenv sync --dev
       - name: Run linter
-        run: pipenv run black --check src
+        run: pipenv run black --diff --check src/
       - name: Run unit tests
         run: pipenv run pytest --cov=src --cov-fail-under=${{vars.TEST_COVERAGE_MINIMUM}} tests/unit/
       - name: Build artifact
@@ -105,7 +105,6 @@ jobs:
         id: write_env_vars
         run: |
           ENV_VARS='${{toJson(vars)}}' python src/config.py --no-pretty
-          ls -Ahl
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
       cft_content: ${{steps.write_cft.outputs.cft_content}}

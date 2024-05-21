@@ -10,7 +10,7 @@ All steps prefixed with `(required)` must be done to fully setup your local repo
 
 ### Download
 
-(required) Clone the repo and enter it:
+**(required)** Clone the repo and enter it:
 ```bash
 git clone git@github.com:passiondynamics/bryti.git
 cd bryti/
@@ -18,19 +18,19 @@ cd bryti/
 
 ### Virtual environment
 
-(required) Enter(/create) the virtual env:
+`(required)` Enter(/create) the virtual env:
 ```bash
 pipenv shell
 ```
 
-(required) Install all dependencies listed in `Pipfile.lock`:
+*(required)* Install all dependencies listed in `Pipfile.lock`:
 ```bash
 pipenv sync --dev
 ```
 
 (required) Set up local environment variables:
 ```bash
-python src/config.py
+python -m src/config.py
 ```
 
 <details>
@@ -47,6 +47,13 @@ Add a new dependency:
 pipenv install {package}
 ```
 
+### Code style
+
+Run the linter:
+```bash
+black src/
+```
+
 ### Unit tests
 
 (make sure you're in the virtual env and at root folder of the repo)
@@ -58,7 +65,7 @@ pytest tests/unit
 
 Run unit tests with coverage information:
 ```bash
-pytest --cov=src tests/unit
+pytest --cov=src --cov-fail-under=90 tests/unit
 ```
 
 <!--

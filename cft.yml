@@ -81,4 +81,6 @@ Resources:
 #      Tags:
 #        - Key: env
 #          Value: !Ref Env
+  # TODO: Add AWS::ApiGatewayV2::Integration
+  # TODO: Add AWS::DynamoDB::GlobalTable
 

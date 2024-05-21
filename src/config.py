@@ -4,7 +4,7 @@ import os
 import sys
 
 
-ENV_VAR_KEYS = []
+ENV_VAR_KEYS = ["TWITCH_CLIENT_ID", "TWITCH_CLIENT_SECRET"]
 ENV_VARS_FILEPATH = "env.json"
 
 
