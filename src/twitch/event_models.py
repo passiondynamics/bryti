@@ -73,7 +73,7 @@ class TwitchChannelChatMessage(BaseModel):
     chatter_user_name: str
     chatter_user_login: str
     message_id: str
-    message: List[TwitchMessage]
+    message: TwitchMessage
     message_type: str
     badges: List[TwitchBadges]
     cheer: Optional[TwitchCheer] = None
