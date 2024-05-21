@@ -38,6 +38,7 @@ class TwitchSignatureMismatchError(Exception):
 class TwitchService:
     def __init__(self, command_prefix: str):
         self.command_prefix = f"!{command_prefix}"
+        # TODO: construct interfaces/pass as arg.
 
     def handle_event(self, headers: TwitchHeaders, body: str) -> Response:
         """
@@ -89,10 +90,10 @@ class TwitchService:
         match event.event:
             case TwitchChannelChatMessage(message=message):
                 # Check if it's a command call, execute if so.
-                split_msg = message.lower().split()
+                split_msg = message.text.lower().split()
                 if len(split_msg) > 0 and split_msg[0] == self.command_prefix:
                     CommandClass, args = resolve_command(split_msg[1:])
-                    if not CommandClass:
+                    if CommandClass:
                         # TODO: determine permission by chatting user info.
                         output = CommandClass(None, Permission.EVERYBODY).execute(*args)
             case TwitchStreamOnline() | TwitchStreamOffline():

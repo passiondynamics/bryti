@@ -3,7 +3,10 @@ import pytest
 
 import json
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import (
+    MagicMock,
+    patch,
+)
 
 from src.twitch.models import (
     TwitchEventType,
@@ -34,6 +37,21 @@ DEFAULT_MOCK_SUBSCRIPTION = {
         "method": "webhook",
         "callback": "mock-callback",
     },
+}
+
+MOCK_STREAM_ONLINE_EVENT = {
+    "broadcaster_user_id": "mock-broadcaster-id",
+    "broadcaster_user_login": "mock-login",
+    "broadcaster_user_name": "mock-name",
+    "id": "mock-id",
+    "type": "mock-type",
+    "started_at": "mock-timestamp",
+}
+
+MOCK_STREAM_OFFLINE_EVENT = {
+    "broadcaster_user_id": "mock-id",
+    "broadcaster_user_login": "mock-login",
+    "broadcaster_user_name": "mock-name",
 }
 
 
@@ -76,20 +94,72 @@ class TestTwitchService:
         assert response.content_type == "text/plain"
         assert response.body == "mock-challenge"
 
-    def test_handle_notification(self):
+    @pytest.mark.parametrize(
+        "event",
+        [
+            (MOCK_STREAM_ONLINE_EVENT),
+            (MOCK_STREAM_OFFLINE_EVENT),
+        ],
+    )
+    def test_handle_notification_non_channel_chat_message(self, event):
         body = {
-            "event": {
-                "broadcaster_user_id": "mock-id",
-                "broadcaster_user_login": "mock-login",
-                "broadcaster_user_name": "mock-name",
-            },
+            "event": event,
             "subscription": DEFAULT_MOCK_SUBSCRIPTION,
         }
+        # TODO: mock Discord interface and assert called.
         response = TwitchService("mock-command-prefix").handle_notification(json.dumps(body))
 
         assert response.status_code == 204
         assert response.content_type == "application/json"
         assert response.body == "{}"
+
+    @pytest.mark.parametrize(
+        "text, should_call_resolve_command, should_call_command",
+        [
+            ("", False, False),
+            ("mock-text", False, False),
+            ("!non-command-prefix test", False, False),
+            ("!mock-command-prefix non-command", True, False),
+            ("!mock-command-prefix command", True, True),
+        ],
+    )
+    @patch("src.twitch.service.resolve_command")
+    def test_handle_notification_channel_chat_message(self, mock_resolve_command, text, should_call_resolve_command, should_call_command):
+        body = {
+            "event": {
+                "broadcaster_user_id": "mock-broadcaster-id",
+                "broadcaster_user_name": "mock-broadcaster-name",
+                "broadcaster_user_login": "mock-broadcaster-login",
+                "chatter_user_id": "mock-chatter-id",
+                "chatter_user_name": "mock-chatter-name",
+                "chatter_user_login": "mock-chatter-login",
+                "message_id": "mock-message-id",
+                "message": {
+                    "text": text,
+                    "fragments": [],
+                },
+                "message_type": "mock-message-type",
+                "badges": [],
+                "color": "mock-color",
+            },
+            "subscription": DEFAULT_MOCK_SUBSCRIPTION,
+        }
+        if should_call_command:
+            mock_command = MagicMock()
+            mock_command_obj = mock_command.return_value
+            mock_command_obj.execute.return_value = "mock-response"
+            mock_resolve_command.return_value = (mock_command, [])
+        else:
+            mock_resolve_command.return_value = (None, [])
+
+        response = TwitchService("mock-command-prefix").handle_notification(json.dumps(body))
+
+        assert response.status_code == 204
+        assert response.content_type == "application/json"
+        assert response.body == "{}"
+        assert mock_resolve_command.called == should_call_resolve_command
+        if should_call_command:
+            assert mock_command_obj.execute.called == should_call_command
 
     def test_handle_revocation(self):
         body = {"subscription": DEFAULT_MOCK_SUBSCRIPTION}
