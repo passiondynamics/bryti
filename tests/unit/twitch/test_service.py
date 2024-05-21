@@ -53,7 +53,7 @@ class TestTwitchService:
             "twitch-eventsub-message-type": event_type,
         })
         with patch(f"src.twitch.service.TwitchService.{service_function_name}") as mock_service_fn:
-            TwitchService().handle_event(headers, "mock-body")
+            TwitchService("mock-command-prefix").handle_event(headers, "mock-body")
             mock_verify_signature.assert_called_with(headers, "mock-body")
             mock_service_fn.assert_called_with("mock-body")
 
@@ -63,14 +63,14 @@ class TestTwitchService:
             "twitch-eventsub-message-signature": "sha256=c0fe54c3d369473bcc76f00aabd90ce62b7497bece3add998cf99965d3228d2f",
         })
         body = "mock-body"
-        TwitchService().verify_signature(headers, body)
+        TwitchService("mock-command-prefix").verify_signature(headers, body)
 
     def test_handle_challenge(self):
         body = {
             "challenge": "mock-challenge",
             "subscription": DEFAULT_MOCK_SUBSCRIPTION,
         }
-        response = TwitchService().handle_challenge(json.dumps(body))
+        response = TwitchService("mock-command-prefix").handle_challenge(json.dumps(body))
 
         assert response.status_code == 200
         assert response.content_type == "text/plain"
@@ -85,7 +85,7 @@ class TestTwitchService:
             },
             "subscription": DEFAULT_MOCK_SUBSCRIPTION,
         }
-        response = TwitchService().handle_notification(json.dumps(body))
+        response = TwitchService("mock-command-prefix").handle_notification(json.dumps(body))
 
         assert response.status_code == 204
         assert response.content_type == "application/json"
@@ -93,7 +93,7 @@ class TestTwitchService:
 
     def test_handle_revocation(self):
         body = {"subscription": DEFAULT_MOCK_SUBSCRIPTION}
-        response = TwitchService().handle_revocation(json.dumps(body))
+        response = TwitchService("mock-command-prefix").handle_revocation(json.dumps(body))
 
         assert response.status_code == 204
         assert response.content_type == "application/json"

@@ -24,7 +24,7 @@ from src.twitch.service import (
 logger = Logger(service="bryti")
 app = APIGatewayHttpResolver()
 env_vars = load_env_vars()
-twitch_service = TwitchService()
+twitch_service = TwitchService(env_vars.get("COMMAND_PREFIX"))
 
 
 class UnknownEventSourceError(Exception):

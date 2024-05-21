@@ -10,12 +10,21 @@ import hmac
 from http import HTTPStatus
 import json
 
+from src.common.commands import (
+    Permission,
+    resolve_command,
+)
 from src.twitch.models import (
     TwitchChallengeEvent,
     TwitchEventType,
     TwitchHeaders,
     TwitchNotificationEvent,
     TwitchRevocationEvent,
+)
+from src.twitch.event_models import (
+    TwitchChannelChatMessage,
+    TwitchStreamOffline,
+    TwitchStreamOnline,
 )
 
 
@@ -27,6 +36,9 @@ class TwitchSignatureMismatchError(Exception):
 
 
 class TwitchService:
+    def __init__(self, command_prefix: str):
+        self.command_prefix = f"!{command_prefix}"
+
     def handle_event(self, headers: TwitchHeaders, body: str) -> Response:
         """
         Router for how to handle the event based on the event type.
@@ -74,7 +86,20 @@ class TwitchService:
         """
         event = TwitchNotificationEvent.model_validate_json(body)
         logger.info("Handling notification", event=event)
+        match event.event:
+            case TwitchChannelChatMessage(message=message):
+                # Check if it's a command call, execute if so.
+                split_msg = message.lower().split()
+                if len(split_msg) > 0 and split_msg[0] == self.command_prefix:
+                    CommandClass, args = resolve_command(split_msg[1:])
+                    if not CommandClass:
+                        # TODO: determine permission by chatting user info.
+                        output = CommandClass(None, Permission.EVERYBODY).execute(*args)
+            case TwitchStreamOnline() | TwitchStreamOffline():
+                # TODO: notify Discord.
+                pass
 
+        # Acknowledge notification.
         return Response(
             status_code=HTTPStatus.NO_CONTENT,
             content_type=content_types.APPLICATION_JSON,
@@ -90,6 +115,7 @@ class TwitchService:
 
         # TODO: send Discord notification.
 
+        # Acknowledge revocation.
         return Response(
             status_code=HTTPStatus.NO_CONTENT,
             content_type=content_types.APPLICATION_JSON,
