@@ -14,6 +14,7 @@ from src.common.commands import (
     Permission,
     resolve_command,
 )
+from src.twitch.interface import TwitchInterface
 from src.twitch.models import (
     TwitchChallengeEvent,
     TwitchEventType,
@@ -21,7 +22,7 @@ from src.twitch.models import (
     TwitchNotificationEvent,
     TwitchRevocationEvent,
 )
-from src.twitch.event_models import (
+from src.twitch.notification_models import (
     TwitchChannelChatMessage,
     TwitchStreamOffline,
     TwitchStreamOnline,
@@ -36,15 +37,21 @@ class TwitchSignatureMismatchError(Exception):
 
 
 class TwitchService:
-    def __init__(self, command_prefix: str):
+    def __init__(
+        self,
+        twitch_interface: TwitchInterface,
+        user_id: str,
+        command_prefix: str,
+    ):
+        self.twitch_interface = twitch_interface
+        self.user_id = user_id
         self.command_prefix = f"!{command_prefix}"
-        # TODO: construct interfaces/pass as arg.
 
     def handle_event(self, headers: TwitchHeaders, body: str) -> Response:
         """
         Router for how to handle the event based on the event type.
         """
-        logger.info("Received Twitch event", headers=headers)
+        logger.info("Received Twitch event", headers=headers.model_dump())
         self.verify_signature(headers, body)
 
         match headers.event_type:
@@ -69,10 +76,10 @@ class TwitchService:
 
     def handle_challenge(self, body: str) -> Response:
         """
-        Handle a callback verification challenge event.
+        Handle a callback verification challenge event by replying with the given challenge.
         """
         event = TwitchChallengeEvent.model_validate_json(body)
-        logger.info("Handling challenge", event=event)
+        logger.info("Handling challenge", event=event.model_dump())
 
         challenge = event.challenge
         return Response(
@@ -83,22 +90,15 @@ class TwitchService:
 
     def handle_notification(self, body: str) -> Response:
         """
-        Handle a subscription notification event.
+        Router for how to handle the subscription notification event based on the subscription event type.
         """
         event = TwitchNotificationEvent.model_validate_json(body)
-        logger.info("Handling notification", event=event)
+        logger.info("Handling notification", event=event.model_dump())
         match event.event:
-            case TwitchChannelChatMessage(message=message):
-                # Check if it's a command call, execute if so.
-                split_msg = message.text.lower().split()
-                if len(split_msg) > 0 and split_msg[0] == self.command_prefix:
-                    CommandClass, args = resolve_command(split_msg[1:])
-                    if CommandClass:
-                        # TODO: determine permission by chatting user info.
-                        output = CommandClass(None, Permission.EVERYBODY).execute(*args)
+            case TwitchChannelChatMessage():
+                self.handle_chat_message(event.event)
             case TwitchStreamOnline() | TwitchStreamOffline():
-                # TODO: notify Discord.
-                pass
+                self.handle_stream_event(event.event)
 
         # Acknowledge notification.
         return Response(
@@ -107,12 +107,43 @@ class TwitchService:
             body="{}",
         )
 
+    def handle_chat_message(self, event: TwitchChannelChatMessage):
+        """
+        Handle a chat message event by, if the message is a command invocation, attempting to execute it.
+        """
+        # Check if it matches the configured command prefix.
+        split_msg = event.message.text.lower().split()
+        if len(split_msg) > 0 and split_msg[0] == self.command_prefix:
+            logger.info("Resolving command", command_args=split_msg[1:])
+            CommandClass, args = resolve_command(split_msg[1:])
+            if CommandClass:
+                # TODO: determine permission by chatting user info.
+                logger.info(
+                    "Executing command",
+                    command=CommandClass,
+                    command_args=args,
+                )
+                reply = CommandClass(None, Permission.EVERYBODY).execute(*args)
+            else:
+                reply = "Couldn't find that command!"
+
+            logger.info("Replying to message", reply=reply)
+            self.twitch_interface.send_chat_message(
+                event.broadcaster_user_id,
+                self.user_id,
+                reply,
+                reply_message_id=event.message_id,
+            )
+
+    def handle_stream_event(self, event: TwitchStreamOnline | TwitchStreamOffline):
+        pass
+
     def handle_revocation(self, body: str) -> Response:
         """
         Handle a subscription revocation event.
         """
         event = TwitchRevocationEvent.model_validate_json(body)
-        logger.info("Handling revocation", event=event)
+        logger.info("Handling revocation", event=event.model_dump())
 
         # TODO: send Discord notification.
 

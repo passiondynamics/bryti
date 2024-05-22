@@ -7,11 +7,12 @@ from enum import Enum
 from typing import (
     Any,
     Generic,
+    List,
     Optional,
     TypeVar,
 )
 
-from src.twitch.event_models import (
+from src.twitch.notification_models import (
     TwitchChannelChatMessage,
     TwitchStreamOffline,
     TwitchStreamOnline,
@@ -86,17 +87,3 @@ class TwitchNotificationEvent(BaseModel):
 
 class TwitchRevocationEvent(BaseModel):
     subscription: TwitchEventSubscription
-
-
-# --- General API response models ---
-
-
-# fmt: off
-T = TypeVar("T")
-class TwitchResponse(BaseModel, Generic[T]):
-    data: T
-    total: int
-    total_cost: int
-    max_total_cost: int
-
-# fmt: on

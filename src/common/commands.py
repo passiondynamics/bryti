@@ -33,28 +33,28 @@ class AbstractCommand(ABC):
 class StatusCommand(AbstractCommand):
     def execute(self) -> str:
         now = datetime.now()
-        now_str = now.strftime("%Y-%m-%d @ %I:%M:%S%p %Z")
+        now_str = now.strftime("%Y-%m-%d @ %-I:%M:%S%P %Z")
         return f"Ok at {now_str}!"
 
 
 class DeathsInfoCommand(AbstractCommand):
     def execute(self) -> str:
-        raise NotImplemented
+        return "Not implemented yet!"
 
 
 class DeathsAddCommand(AbstractCommand):
     def execute(self) -> str:
-        raise NotImplemented
+        return "Not implemented yet!"
 
 
 class DeathsSetCommand(AbstractCommand):
     def execute(self, deaths: int) -> str:
-        raise NotImplemented
+        return "Not implemented yet!"
 
 
 class TwitchConnectCommand(AbstractCommand):
     def execute(self) -> str:
-        raise NotImplemented
+        return "Not implemented yet!"
 
 
 """
@@ -77,6 +77,7 @@ COMMAND_TREE = {
         "connect": TwitchConnectCommand,
     },
 }
+# TODO: add "help" command/dynamically generate help content.
 
 
 def resolve_command(args: List[str]):
