@@ -67,6 +67,7 @@ jobs:
         run: pipenv run black --diff --check src/
       - name: Run unit tests
         run: pipenv run pytest --cov=src --cov-fail-under=${{vars.TEST_COVERAGE_MINIMUM}} tests/unit/
+      # TODO: re-use artifact if nothing has changed.
       - name: Build artifact
         run: |
           echo "[*] Downloading dependencies..."

@@ -95,7 +95,7 @@ Resources:
     Properties:
       ApiId: !Ref APIGatewayID
       RouteKey: !Sub 'ANY /${Component}'
-      Target: !Ref APIGatewayIntegration
+      Target: !Sub 'integrations/${APIGatewayIntegration}'
 
   APIGatewayIntegration:
     Type: 'AWS::ApiGatewayV2::Integration'
