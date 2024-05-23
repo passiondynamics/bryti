@@ -160,6 +160,23 @@ def test_handle_notification(twitch_service, event, service_function_name):
         mock_service_fn.assert_called_once()
 
 
+@patch("src.twitch.service.TwitchService.handle_chat_message")
+def test_handle_notification_channel_chat_message_same_user_id(mock_handle_chat_message, twitch_service):
+    body = {
+        "event": {
+            **DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE,
+            "chatter_user_id": "mock-user-id",
+        },
+        "subscription": DEFAULT_MOCK_SUBSCRIPTION,
+    }
+    response = twitch_service.handle_notification(json.dumps(body))
+
+    assert response.status_code == 204
+    assert response.content_type == "application/json"
+    assert response.body == "{}"
+    mock_handle_chat_message.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "text",
     [
@@ -179,7 +196,7 @@ def test_handle_chat_message_not_command_prefix(mock_resolve_command, twitch_ser
 
 
 @patch("src.twitch.service.resolve_command")
-def test_handle_chat_message_bad_command(mock_resolve_command, mock_twitch_interface, twitch_service):
+def test_handle_chat_message_nonexistant_command(mock_resolve_command, mock_twitch_interface, twitch_service):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
     event.message.text = "!mock-command-prefix arg1 arg2 arg3"
     mock_resolve_command.return_value = (None, [])
@@ -187,6 +204,27 @@ def test_handle_chat_message_bad_command(mock_resolve_command, mock_twitch_inter
     twitch_service.handle_chat_message(event)
 
     mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
+
+
+@patch("src.twitch.service.resolve_command")
+def test_handle_chat_message_bad_command(mock_resolve_command, mock_twitch_interface, twitch_service):
+    event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.message.text = "!mock-command-prefix arg1 arg2 arg3"
+    mock_command = MagicMock()
+    mock_command_obj = mock_command.return_value
+    mock_command_obj.execute.side_effect = TypeError
+    mock_resolve_command.return_value = (mock_command, ["arg2", "arg3"])
+
+    twitch_service.handle_chat_message(event)
+
+    mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
+    mock_command_obj.execute.assert_called_once_with("arg2", "arg3")
+    mock_twitch_interface.send_chat_message.assert_called_with(
+        "mock-broadcaster-id",
+        "mock-user-id",
+        "Invalid call to command!",
+        reply_message_id="mock-message-id",
+    )
 
 
 @patch("src.twitch.service.resolve_command")

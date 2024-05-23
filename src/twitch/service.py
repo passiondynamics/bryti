@@ -95,8 +95,9 @@ class TwitchService:
         event = TwitchNotificationEvent.model_validate_json(body)
         logger.info("Handling notification", event=event.model_dump())
         match event.event:
-            case TwitchChannelChatMessage():
-                self.handle_chat_message(event.event)
+            case TwitchChannelChatMessage(chatter_user_id=chatter_user_id):
+                if chatter_user_id != self.user_id:
+                    self.handle_chat_message(event.event)
             case TwitchStreamOnline() | TwitchStreamOffline():
                 self.handle_stream_event(event.event)
 
@@ -123,7 +124,10 @@ class TwitchService:
                     command=CommandClass,
                     command_args=args,
                 )
-                reply = CommandClass(None, Permission.EVERYBODY).execute(*args)
+                try:
+                    reply = CommandClass(None, Permission.EVERYBODY).execute(*args)
+                except TypeError as e:
+                    reply = "Invalid call to command!"
             else:
                 reply = "Couldn't find that command!"
 

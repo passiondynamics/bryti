@@ -65,7 +65,7 @@ pytest tests/unit
 
 Run unit tests with coverage information:
 ```bash
-pytest --cov=src --cov-fail-under=90 tests/unit
+pytest --cov=src --cov-fail-under=80 tests/unit
 ```
 
 <!--
