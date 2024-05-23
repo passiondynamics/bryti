@@ -97,18 +97,25 @@ Resources:
     Type: 'AWS::DynamoDB::GlobalTable'
     Properties:
       AttributeDefinitions:
-        - AttributeName: broadcaster
+        - AttributeName: user
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: twitch-username-index
+          KeySchema:
+            - AttributeName: twitch_username
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
       KeySchema:
-        - AttributeName: broadcaster
+        - AttributeName: user
           KeyType: HASH
-      TableName: !Sub '${Component}-${Env}-state'
       Replicas:
         - Region: us-east-1
           Tags:
             - Key: env
               Value: !Ref Env
+      TableName: !Sub '${Component}-${Env}-state'
 
   # --- API Gateway resources (to allow external invocation) ---
   APIGatewayRoute:
@@ -123,7 +130,6 @@ Resources:
     Properties:
       ApiId: !Ref APIGatewayID
       CredentialsArn: !Ref APIGatewayRoleARN
-      # IntegrationMethod: ANY
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt LambdaFunction.Arn
       PayloadFormatVersion: '2.0'

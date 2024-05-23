@@ -39,6 +39,7 @@ jobs:
     name: Build
     needs: init
     runs-on: ubuntu-latest
+    # TODO: remove environment
     environment: ${{needs.init.outputs.deployment_env}}
     env:
       # Use env vars for easier repeated reference.
