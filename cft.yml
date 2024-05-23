@@ -108,7 +108,7 @@ Resources:
         - Region: us-east-1
           Tags:
             - Key: env
-              Value: !Ref env
+              Value: !Ref Env
 
   # --- API Gateway resources (to allow external invocation) ---
   APIGatewayRoute:
