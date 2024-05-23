@@ -14,6 +14,7 @@ from typing import (
 )
 
 from src.config import load_env_vars
+from src.twitch.interface import TwitchInterface
 from src.twitch.models import TwitchHeaders
 from src.twitch.service import (
     TwitchService,
@@ -24,7 +25,16 @@ from src.twitch.service import (
 logger = Logger(service="bryti")
 app = APIGatewayHttpResolver()
 env_vars = load_env_vars()
-twitch_service = TwitchService()
+twitch_interface = TwitchInterface(
+    env_vars["TWITCH_CLIENT_ID"],
+    env_vars["TWITCH_CLIENT_SECRET"],
+)
+# TODO: construct Discord + DynamoDB interfaces and pass to services.
+twitch_service = TwitchService(
+    twitch_interface,
+    env_vars["TWITCH_USER_ID"],
+    env_vars["COMMAND_PREFIX"],
+)
 
 
 class UnknownEventSourceError(Exception):
