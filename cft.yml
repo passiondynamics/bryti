@@ -26,6 +26,7 @@ Parameters:
     Type: String
     Description: The ARN of the IAM role for API Gateway to assume for invoking the Lambda.
 Resources:
+  # --- Main Lambda function ---
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -56,6 +57,7 @@ Resources:
           Value: !Ref Env
       Timeout: 30
 
+  # --- IAM resources (to attach to the Lambda) ---
   LambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -90,6 +92,25 @@ Resources:
 #        - Key: env
 #          Value: !Ref Env
 
+  # --- DynamoDB resource (for persisting state across invocations) ---
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::GlobalTable'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: broadcaster
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: broadcaster
+          KeyType: HASH
+      TableName: !Sub '${Component}-${Env}-state'
+      Replicas:
+        - Region: us-east-1
+          Tags:
+            - Key: env
+              Value: !Ref env
+
+  # --- API Gateway resources (to allow external invocation) ---
   APIGatewayRoute:
     Type: 'AWS::ApiGatewayV2::Route'
     Properties:
@@ -105,7 +126,6 @@ Resources:
       # IntegrationMethod: ANY
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt LambdaFunction.Arn
-      PayloadFormatVersion: "2.0"
+      PayloadFormatVersion: '2.0'
 
-  # TODO: Add AWS::DynamoDB::GlobalTable
 
