@@ -101,7 +101,7 @@ Resources:
     Type: 'AWS::ApiGatewayV2::Integration'
     Properties:
       ApiId: !Ref APIGatewayID
-      CredentialsArn: !Ref APIGatewayIAMRole
+      CredentialsArn: !Ref APIGatewayRoleARN
       # IntegrationMethod: ANY
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt LambdaFunction.Arn
