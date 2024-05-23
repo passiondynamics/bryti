@@ -117,7 +117,7 @@ Resources:
           Tags:
             - Key: env
               Value: !Ref Env
-      TableName: !Sub '${Component}-${Env}-state-tmp'
+      TableName: !Sub '${Component}-${Env}-state'
 
   # --- API Gateway resources (to allow external invocation) ---
   APIGatewayRoute:
