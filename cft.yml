@@ -99,6 +99,8 @@ Resources:
       AttributeDefinitions:
         - AttributeName: user
           AttributeType: S
+        - AttributeName: twitch_username
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       GlobalSecondaryIndexes:
         - IndexName: twitch-username-index
