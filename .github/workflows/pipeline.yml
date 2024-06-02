@@ -29,8 +29,6 @@ jobs:
 
           echo "[*] Pipeline vars:"
           printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a "$GITHUB_OUTPUT"
-      - name: Set up job summary markdown
-        run: printf "|Step|Info|\n|---|---|" | tee "$GITHUB_STEP_SUMMARY"
     outputs:
       artifact_filename: ${{steps.pipeline_vars.outputs.artifact_filename}}
       artifact_bucket_key: ${{steps.pipeline_vars.outputs.artifact_bucket_key}}
@@ -69,9 +67,13 @@ jobs:
       - name: Run linter
         run: pipenv run black --diff --check src/
       - name: Run unit tests
-        run: pipenv run pytest --cov=src --cov-fail-under=${{vars.TEST_COVERAGE_MINIMUM}} tests/unit/
-      - name: Test append to job summary
-        run: echo "|Test append to job summary|Test!|" | tee "$GITHUB_STEP_SUMMARY"
+        run: |
+          pipenv run pytest --cov=src tests/unit/
+          printf "# Unit test coverage\n\n" >> "$GITHUB_STEP_SUMMARY"
+          coverage report --skip-empty -m --format=markdown --fail-under "${{vars.TEST_COVERAGE_MINIMUM}}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+          # Stop the pipeline if under test coverage minimum.
+          tail -n 1 "$GITHUB_STEP_SUMMARY" | grep -v "Coverage failure: "
       # TODO: re-use artifact if nothing has changed.
       - name: Build artifact
         run: |
