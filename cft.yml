@@ -101,11 +101,19 @@ Resources:
           AttributeType: S
         - AttributeName: twitch_username
           AttributeType: S
+        - AttributeName: discord_username
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       GlobalSecondaryIndexes:
         - IndexName: twitch-username-index
           KeySchema:
             - AttributeName: twitch_username
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+        - IndexName: discord-username-index
+          KeySchema:
+            - AttributeName: discord_username
               KeyType: HASH
           Projection:
             ProjectionType: KEYS_ONLY
@@ -118,6 +126,9 @@ Resources:
             - Key: env
               Value: !Ref Env
       TableName: !Sub '${Component}-${Env}-state'
+      Tags:
+        - Key: env
+          Value: !Ref Env
 
   # --- API Gateway resources (to allow external invocation) ---
   APIGatewayRoute:

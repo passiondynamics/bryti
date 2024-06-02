@@ -29,6 +29,8 @@ jobs:
 
           echo "[*] Pipeline vars:"
           printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a "$GITHUB_OUTPUT"
+      - name: Set up job summary markdown
+        run: printf "|Step|Info|\n|---|---|" | tee "$GITHUB_STEP_SUMMARY"
     outputs:
       artifact_filename: ${{steps.pipeline_vars.outputs.artifact_filename}}
       artifact_bucket_key: ${{steps.pipeline_vars.outputs.artifact_bucket_key}}
@@ -68,6 +70,8 @@ jobs:
         run: pipenv run black --diff --check src/
       - name: Run unit tests
         run: pipenv run pytest --cov=src --cov-fail-under=${{vars.TEST_COVERAGE_MINIMUM}} tests/unit/
+      - name: Test append to job summary
+        run: echo "|Test append to job summary|Test!|" | tee "$GITHUB_STEP_SUMMARY"
       # TODO: re-use artifact if nothing has changed.
       - name: Build artifact
         run: |
