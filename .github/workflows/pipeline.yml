@@ -111,7 +111,7 @@ jobs:
         id: write_env_vars
         run: |
           # Use jq to create ENV_VARS w/ env
-          export ENV_VARS=${jq "${{vars}}" + '{"ENV": "${{needs.init.outputs.deployment_env}}"}'}
+          export ENV_VARS=${jq '${{toJSON(vars)}}' + '{"ENV": "${{needs.init.outputs.deployment_env}}"}'}
           echo "$ENV_VARS"
           python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
