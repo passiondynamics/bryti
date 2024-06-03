@@ -36,15 +36,19 @@ def dict_to_ddb(obj: dict) -> dict:
 
 class StateTableInterface:
     ATTRIBUTE_KEYS = [
-        l1 + l2
-        for l1 in string.ascii_lowercase
-        for l2 in string.ascii_lowercase
+        l1 + l2 for l1 in string.ascii_lowercase for l2 in string.ascii_lowercase
     ]
+
     def __init__(self, dynamodb_client, table_name: str):
         self.dynamodb_client = dynamodb_client
         self.table_name = table_name
 
-    def _query(self, key: str, value: str, index_name: Optional[str] = None) -> List[dict]:
+    def _query(
+        self,
+        key: str,
+        value: str,
+        index_name: Optional[str] = None,
+    ) -> List[dict]:
         """
         Helper to query the state table on the given primary key (and optionally, on a given index).
 
@@ -128,7 +132,7 @@ class StateTableInterface:
         attribute_names = {}
         attribute_values = {":one": {"N": "1"}}
         update_expressions = []
-        for (k, (n, v)) in zipped_attributes:
+        for k, (n, v) in zipped_attributes:
             an = "#" + k
             av = ":" + k
             attribute_expression = f"{an} = {av}"
