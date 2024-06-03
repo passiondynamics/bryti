@@ -14,13 +14,6 @@ MOCK_CONTEXT = SimpleNamespace(**{
     "aws_request_id": "mock-request-id",
 })
 
-MOCK_ENV_VARS = {
-    "TWITCH_CLIENT_ID": "mock-client-id",
-    "TWITCH_CLIENT_SECRET": "mock-client-secret",
-    "TWITCH_USER_ID": "mock-user-id",
-    "COMMAND_PREFIX": "mock-command-prefix",
-}
-
 MOCK_TWITCH_EVENT = {
     "requestContext": {
         "http": {"method": "POST"},

@@ -77,13 +77,13 @@ MOCK_STREAM_OFFLINE_EVENT = {
 
 
 @pytest.fixture
-def mock_twitch_interface():
+def mock_api_interfaces():
     return MagicMock()
 
 
 @pytest.fixture
-def twitch_service(mock_twitch_interface):
-    return TwitchService(mock_twitch_interface, "mock-user-id", "mock-command-prefix")
+def twitch_service(mock_api_interfaces):
+    return TwitchService(mock_api_interfaces, "mock-user-id", "mock-command-prefix")
 
 
 @pytest.mark.parametrize(
@@ -196,7 +196,7 @@ def test_handle_chat_message_not_command_prefix(mock_resolve_command, twitch_ser
 
 
 @patch("src.twitch.service.resolve_command")
-def test_handle_chat_message_nonexistant_command(mock_resolve_command, mock_twitch_interface, twitch_service):
+def test_handle_chat_message_nonexistant_command(mock_resolve_command, twitch_service):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
     event.message.text = "!mock-command-prefix arg1 arg2 arg3"
     mock_resolve_command.return_value = (None, [])
@@ -207,7 +207,7 @@ def test_handle_chat_message_nonexistant_command(mock_resolve_command, mock_twit
 
 
 @patch("src.twitch.service.resolve_command")
-def test_handle_chat_message_bad_command(mock_resolve_command, mock_twitch_interface, twitch_service):
+def test_handle_chat_message_bad_command(mock_resolve_command, mock_api_interfaces, twitch_service):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
     event.message.text = "!mock-command-prefix arg1 arg2 arg3"
     mock_command = MagicMock()
@@ -219,7 +219,7 @@ def test_handle_chat_message_bad_command(mock_resolve_command, mock_twitch_inter
 
     mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
     mock_command_obj.execute.assert_called_once_with("arg2", "arg3")
-    mock_twitch_interface.send_chat_message.assert_called_with(
+    mock_api_interfaces.twitch.send_chat_message.assert_called_with(
         "mock-broadcaster-id",
         "mock-user-id",
         "Invalid call to command!",
@@ -228,7 +228,7 @@ def test_handle_chat_message_bad_command(mock_resolve_command, mock_twitch_inter
 
 
 @patch("src.twitch.service.resolve_command")
-def test_handle_chat_message_valid_command(mock_resolve_command, mock_twitch_interface, twitch_service):
+def test_handle_chat_message_valid_command(mock_resolve_command, mock_api_interfaces, twitch_service):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
     event.message.text = "!mock-command-prefix arg1 arg2 arg3"
     mock_command = MagicMock()
@@ -240,7 +240,7 @@ def test_handle_chat_message_valid_command(mock_resolve_command, mock_twitch_int
 
     mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
     mock_command_obj.execute.assert_called_once_with("arg2", "arg3")
-    mock_twitch_interface.send_chat_message.assert_called_with(
+    mock_api_interfaces.twitch.send_chat_message.assert_called_with(
         "mock-broadcaster-id",
         "mock-user-id",
         "mock-reply",

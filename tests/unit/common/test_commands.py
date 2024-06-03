@@ -4,6 +4,7 @@ from unittest.mock import (
 )
 import pytest
 
+from src.common.api_interfaces import APIInterfaces
 from src.common.commands import (
     Permission,
     StatusCommand,
@@ -20,35 +21,40 @@ from datetime import (
 )
 
 
+@pytest.fixture
+def mock_api_interfaces():
+    return APIInterfaces(MagicMock(), MagicMock())
+
+
 @patch("src.common.commands.datetime")
-def test_status_command(mock_datetime):
+def test_status_command(mock_datetime, mock_api_interfaces):
     mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
     expected = "Ok at 2006-01-02 @ 3:04:05pm UTC!"
-    actual = StatusCommand(None, Permission.EVERYBODY).execute()
+    actual = StatusCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
     assert actual == expected
 
 
-def test_deaths_info_command():
+def test_deaths_info_command(mock_api_interfaces):
     expected = "Not implemented yet!"
-    actual = DeathsInfoCommand(None, Permission.EVERYBODY).execute()
+    actual = DeathsInfoCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
     assert actual == expected
 
 
-def test_deaths_add_command():
+def test_deaths_add_command(mock_api_interfaces):
     expected = "Not implemented yet!"
-    actual = DeathsAddCommand(None, Permission.EVERYBODY).execute()
+    actual = DeathsAddCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
     assert actual == expected
 
 
-def test_deaths_set_command():
+def test_deaths_set_command(mock_api_interfaces):
     expected = "Not implemented yet!"
-    actual = DeathsSetCommand(None, Permission.EVERYBODY).execute(0)
+    actual = DeathsSetCommand(mock_api_interfaces, Permission.EVERYBODY).execute(0)
     assert actual == expected
 
 
-def test_twitch_connect_command():
+def test_twitch_connect_command(mock_api_interfaces):
     expected = "Not implemented yet!"
-    actual = TwitchConnectCommand(None, Permission.EVERYBODY).execute()
+    actual = TwitchConnectCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
     assert actual == expected
 
 

@@ -14,12 +14,12 @@ from datetime import (
 from inspect import isclass
 from typing import List
 
+from src.common.api_interfaces import APIInterfaces
 from src.common.state_models import Permission
 
 
 class AbstractCommand(ABC):
-    # TODO: add type hint for interfaces.
-    def __init__(self, interfaces, permission: Permission):
+    def __init__(self, interfaces: APIInterfaces, permission: Permission):
         self.interfaces = interfaces
         self.permission = permission
 

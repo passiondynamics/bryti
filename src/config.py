@@ -5,10 +5,10 @@ import sys
 
 
 ENV_VAR_KEYS = [
+    "ENV",
     "TWITCH_CLIENT_ID",
     "TWITCH_CLIENT_SECRET",
     "TWITCH_USER_ID",
-    "COMMAND_PREFIX",
 ]
 ENV_VARS_FILEPATH = "env.json"
 

@@ -5,6 +5,7 @@ from aws_lambda_powertools.event_handler import (
 )
 from aws_lambda_powertools.logging import Logger
 from aws_lambda_powertools.utilities.typing import LambdaContext
+import boto3
 from pydantic import ValidationError
 
 from http import HTTPStatus
@@ -13,6 +14,8 @@ from typing import (
     Dict,
 )
 
+from src.common.api_interfaces import APIInterfaces
+from src.common.state_table_interface import StateTableInterface
 from src.config import load_env_vars
 from src.twitch.interface import TwitchInterface
 from src.twitch.models import TwitchHeaders
@@ -22,19 +25,39 @@ from src.twitch.service import (
 )
 
 
+# --- Global/cold start variables ---
+
 logger = Logger(service="bryti")
 app = APIGatewayHttpResolver()
+
 env_vars = load_env_vars()
+ENV = env_vars["ENV"]
+STATE_TABLE_NAME = f"bryti-{ENV}-state"
+COMMAND_PREFIX = "bryti" if ENV == "prod" else "bryti-{ENV}"
+
+dynamodb_client = boto3.client("dynamodb")
+state_table_interface = StateTableInterface(
+    dynamodb_client,
+    STATE_TABLE_NAME,
+)
 twitch_interface = TwitchInterface(
     env_vars["TWITCH_CLIENT_ID"],
     env_vars["TWITCH_CLIENT_SECRET"],
 )
-# TODO: construct Discord + DynamoDB interfaces and pass to services.
-twitch_service = TwitchService(
+api_interfaces = APIInterfaces(
+    state_table_interface,
     twitch_interface,
-    env_vars["TWITCH_USER_ID"],
-    env_vars["COMMAND_PREFIX"],
 )
+
+# TODO: construct Discord interface and pass to services.
+twitch_service = TwitchService(
+    api_interfaces,
+    env_vars["TWITCH_USER_ID"],
+    COMMAND_PREFIX,
+)
+
+
+# --- Main logic ---
 
 
 class UnknownEventSourceError(Exception):

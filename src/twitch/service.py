@@ -10,6 +10,7 @@ import hmac
 from http import HTTPStatus
 import json
 
+from src.common.api_interfaces import APIInterfaces
 from src.common.commands import (
     Permission,
     resolve_command,
@@ -39,11 +40,11 @@ class TwitchSignatureMismatchError(Exception):
 class TwitchService:
     def __init__(
         self,
-        twitch_interface: TwitchInterface,
+        api_interfaces: APIInterfaces,
         user_id: str,
         command_prefix: str,
     ):
-        self.twitch_interface = twitch_interface
+        self.api_interfaces = api_interfaces
         self.user_id = user_id
         self.command_prefix = f"!{command_prefix}"
 
@@ -132,7 +133,7 @@ class TwitchService:
                 reply = "Couldn't find that command!"
 
             logger.info("Replying to message", reply=reply)
-            self.twitch_interface.send_chat_message(
+            self.api_interfaces.twitch.send_chat_message(
                 event.broadcaster_user_id,
                 self.user_id,
                 reply,

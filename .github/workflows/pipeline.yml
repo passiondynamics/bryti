@@ -39,8 +39,6 @@ jobs:
     name: Build
     needs: init
     runs-on: ubuntu-latest
-    # TODO: remove environment
-    environment: ${{needs.init.outputs.deployment_env}}
     env:
       # Use env vars for easier repeated reference.
       artifact_filename: ${{needs.init.outputs.artifact_filename}}
@@ -112,7 +110,10 @@ jobs:
       - name: Write env vars to output
         id: write_env_vars
         run: |
-          ENV_VARS='${{toJson(vars)}}' python src/config.py --no-pretty
+          # Use jq to create ENV_VARS w/ env
+          export ENV_VARS=${jq "${{toJSON(vars)}}" + '{"ENV": "${{needs.init.outputs.deployment_env}}"}'}
+          echo "$ENV_VARS"
+          python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
       cft_content: ${{steps.write_cft.outputs.cft_content}}
