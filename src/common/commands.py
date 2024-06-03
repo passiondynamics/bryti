@@ -7,16 +7,14 @@ from abc import (
     ABC,
     abstractmethod,
 )
-from datetime import datetime
-from enum import Enum
+from datetime import (
+    datetime,
+    timezone,
+)
 from inspect import isclass
 from typing import List
 
-
-class Permission(str, Enum):
-    EVERYBODY = "everybody"
-    MODERATOR = "moderator"
-    BROADCASTER = "broadcaster"
+from src.common.state_models import Permission
 
 
 class AbstractCommand(ABC):
@@ -32,7 +30,7 @@ class AbstractCommand(ABC):
 
 class StatusCommand(AbstractCommand):
     def execute(self) -> str:
-        now = datetime.now()
+        now = datetime.now(tz=timezone.utc)
         now_str = now.strftime("%Y-%m-%d @ %-I:%M:%S%P %Z")
         return f"Ok at {now_str}!"
 
