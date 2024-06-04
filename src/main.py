@@ -33,7 +33,7 @@ app = APIGatewayHttpResolver()
 env_vars = load_env_vars()
 ENV = env_vars["ENV"]
 STATE_TABLE_NAME = f"bryti-{ENV}-state"
-COMMAND_PREFIX = "bryti" if ENV == "prod" else "bryti-{ENV}"
+COMMAND_PREFIX = "bryti" if ENV == "prod" else f"bryti-{ENV}"
 
 dynamodb_client = boto3.client("dynamodb")
 state_table_interface = StateTableInterface(
