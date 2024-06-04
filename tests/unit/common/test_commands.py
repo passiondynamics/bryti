@@ -14,6 +14,10 @@ from src.common.commands import (
     TwitchConnectCommand,
     resolve_command,
 )
+from src.common.state_models import (
+    DeathState,
+    State,
+)
 
 from datetime import (
     datetime,
@@ -21,40 +25,50 @@ from datetime import (
 )
 
 
+MOCK_API_INTERFACES = APIInterfaces(MagicMock(), MagicMock())
 @pytest.fixture
-def mock_api_interfaces():
-    return APIInterfaces(MagicMock(), MagicMock())
+def mock_state():
+    return State(user="mock-user")
 
 
 @patch("src.common.commands.datetime")
-def test_status_command(mock_datetime, mock_api_interfaces):
+def test_status_command(mock_datetime, mock_state):
     mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
     expected = "Ok at 2006-01-02 @ 3:04:05pm UTC!"
-    actual = StatusCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
+    actual = StatusCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute()
     assert actual == expected
 
 
-def test_deaths_info_command(mock_api_interfaces):
+def test_deaths_info_command_no_deaths(mock_state):
+    actual = DeathsInfoCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute()
+    assert actual == "No deaths yet!"
+
+    mock_state.deaths = DeathState(count=0, last_timestamp="2006-01-02T15:04:05Z")
+    actual = DeathsInfoCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute()
+    assert actual == "No deaths yet!"
+
+
+def test_deaths_info_command_with_deaths(mock_state):
+    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    actual = DeathsInfoCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute()
+    assert actual == "Death count: 4\nLast death: 2006-01-02 @ 3:04:05pm UTC"
+
+
+def test_deaths_add_command(mock_state):
     expected = "Not implemented yet!"
-    actual = DeathsInfoCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
+    actual = DeathsAddCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute()
     assert actual == expected
 
 
-def test_deaths_add_command(mock_api_interfaces):
+def test_deaths_set_command(mock_state):
     expected = "Not implemented yet!"
-    actual = DeathsAddCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
+    actual = DeathsSetCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute(0)
     assert actual == expected
 
 
-def test_deaths_set_command(mock_api_interfaces):
+def test_twitch_connect_command(mock_state):
     expected = "Not implemented yet!"
-    actual = DeathsSetCommand(mock_api_interfaces, Permission.EVERYBODY).execute(0)
-    assert actual == expected
-
-
-def test_twitch_connect_command(mock_api_interfaces):
-    expected = "Not implemented yet!"
-    actual = TwitchConnectCommand(mock_api_interfaces, Permission.EVERYBODY).execute()
+    actual = TwitchConnectCommand(MOCK_API_INTERFACES, mock_state, Permission.EVERYBODY).execute()
     assert actual == expected
 
 

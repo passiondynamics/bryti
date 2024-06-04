@@ -11,9 +11,10 @@ from http import HTTPStatus
 import json
 
 from src.common.api_interfaces import APIInterfaces
-from src.common.commands import (
+from src.common.commands import resolve_command
+from src.common.state_models import (
     Permission,
-    resolve_command,
+    State,
 )
 from src.twitch.interface import TwitchInterface
 from src.twitch.models import (
@@ -119,14 +120,18 @@ class TwitchService:
             logger.info("Resolving command", command_args=split_msg[1:])
             CommandClass, args = resolve_command(split_msg[1:])
             if CommandClass:
-                # TODO: determine permission by chatting user info.
+                state, permission = self.retrieve_event_context(event)
                 logger.info(
                     "Executing command",
                     command=CommandClass,
                     command_args=args,
                 )
                 try:
-                    reply = CommandClass(None, Permission.EVERYBODY).execute(*args)
+                    reply = CommandClass(
+                        self.api_interfaces,
+                        state,
+                        permission,
+                    ).execute(*args)
                 except TypeError as e:
                     reply = "Invalid call to command!"
             else:
@@ -139,6 +144,26 @@ class TwitchService:
                 reply,
                 reply_message_id=event.message_id,
             )
+
+    def retrieve_event_context(
+        self,
+        event: TwitchChannelChatMessage,
+    ) -> (State, Permission):
+        """
+        Look up user information/state from the state table.
+        """
+        broadcaster = self.api_interfaces.state_table.get_user_by_twitch(
+            event.broadcaster_user_login
+        )
+        chatter = self.api_interfaces.state_table.get_user_by_twitch(
+            event.chatter_user_login
+        )
+        state = self.api_interfaces.state_table.get_state(broadcaster)
+        permission = state.members.get(chatter, Permission.EVERYBODY)
+        if chatter == broadcaster:
+            permission = Permission.BROADCASTER
+
+        return state, permission
 
     def handle_stream_event(self, event: TwitchStreamOnline | TwitchStreamOffline):
         pass

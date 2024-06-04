@@ -15,12 +15,19 @@ from inspect import isclass
 from typing import List
 
 from src.common.api_interfaces import APIInterfaces
-from src.common.state_models import Permission
+from src.common.state_models import (
+    Permission,
+    State,
+)
+
+
+DATETIME_FMT = "%Y-%m-%d @ %-I:%M:%S%P %Z"
 
 
 class AbstractCommand(ABC):
-    def __init__(self, interfaces: APIInterfaces, permission: Permission):
+    def __init__(self, interfaces: APIInterfaces, state: State, permission: Permission):
         self.interfaces = interfaces
+        self.state = state
         self.permission = permission
 
     @abstractmethod
@@ -29,15 +36,29 @@ class AbstractCommand(ABC):
 
 
 class StatusCommand(AbstractCommand):
+    """
+    Generate a status reply to the ping.
+    """
+
     def execute(self) -> str:
         now = datetime.now(tz=timezone.utc)
-        now_str = now.strftime("%Y-%m-%d @ %-I:%M:%S%P %Z")
+        now_str = now.strftime(DATETIME_FMT)
         return f"Ok at {now_str}!"
 
 
 class DeathsInfoCommand(AbstractCommand):
+    """
+    Get info about the broadcaster's deaths.
+    """
+
     def execute(self) -> str:
-        return "Not implemented yet!"
+        reply = "No deaths yet!"
+        deaths = self.state.deaths
+        if deaths is not None and deaths.count != 0:
+            timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
+            reply = f"Death count: {deaths.count}\nLast death: {timestamp_str}"
+
+        return reply
 
 
 class DeathsAddCommand(AbstractCommand):

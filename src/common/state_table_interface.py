@@ -76,6 +76,7 @@ class StateTableInterface:
         response = self.dynamodb_client.query(**query_args)
         return [ddb_to_dict(item) for item in response["Items"]]
 
+    # TODO: use Twitch user ID instead (bc not mutable).
     def get_user_by_twitch(self, twitch_username: str) -> Optional[str]:
         """
         Queries the state table to lookup the corresponding user primary key for a given Twitch username.

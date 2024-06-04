@@ -13,12 +13,8 @@ from src.common.state_table_interface import (
 )
 
 
-MOCK_DDB_ITEM = {
-    "user": {"S": "mock-user"},
-    "twitch_username": {"S": "mock-twitch-username"},
-    "discord_username": {"S": "mock-discord-username"},
-}
-MOCK_DICT_ITEM = {"user": "mock-user", "twitch_username": "mock-twitch-username", "discord_username": "mock-discord-username"}
+MOCK_DDB_ITEM = {"user": {"S": "mock-user"}}
+MOCK_DICT_ITEM = {"user": "mock-user"}
 
 
 def test_ddb_to_dict():
@@ -139,7 +135,7 @@ def test_get_user_by_discord(mock_dynamodb_client, state_interface, ddb_items, e
     "ddb_items, expected",
     [
         ([], None),
-        ([MOCK_DDB_ITEM], State(user="mock-user", twitch_username="mock-twitch-username", discord_username="mock-discord-username")),
+        ([MOCK_DDB_ITEM], State(user="mock-user")),
     ],
 )
 def test_get_state(mock_dynamodb_client, state_interface, ddb_items, expected):
@@ -159,8 +155,8 @@ def test_get_state(mock_dynamodb_client, state_interface, ddb_items, expected):
 
 def test_update_state(mock_dynamodb_client, state_interface):
     mock_dynamodb_client.update_item.return_value = {"Attributes": {**MOCK_DDB_ITEM, "version": {"N": "2"}}}
-    initial_state = State(user="mock-user", twitch_username="mock-twitch-username", discord_username="mock-discord-username", version=1)
-    final_state = State(user="mock-user", twitch_username="mock-twitch-username", discord_username="mock-discord-username", version=2)
+    initial_state = State(user="mock-user", version=1)
+    final_state = State(user="mock-user", version=2)
 
     actual = state_interface.update_state(initial_state)
     assert actual == final_state
@@ -168,19 +164,15 @@ def test_update_state(mock_dynamodb_client, state_interface):
         TableName="mock-table-name",
         Key={"user": {"S": "mock-user"}},
         ExpressionAttributeNames={
-            "#ab": "twitch_username",
-            "#ac": "discord_username",
-            "#ad": "members",
-            "#ae": "version",
+            "#ab": "members",
+            "#ac": "version",
         },
         ExpressionAttributeValues={
             ":one": {"N": "1"},
-            ":ab": {"S": "mock-twitch-username"},
-            ":ac": {"S": "mock-discord-username"},
-            ":ad": {"M": {}},
-            ":ae": {"N": "1"},
+            ":ab": {"M": {}},
+            ":ac": {"N": "1"},
         },
-        UpdateExpression="SET #ab = :ab, #ac = :ac, #ad = :ad, #ae = :ae + :one",
-        ConditionExpression="#ae = :ae",
+        UpdateExpression="SET #ab = :ab, #ac = :ac + :one",
+        ConditionExpression="#ac = :ac",
         ReturnValues="ALL_NEW",
     )
