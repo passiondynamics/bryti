@@ -91,7 +91,7 @@ Resources:
             Resource:
               - !GetAtt DynamoDBTable.Arn
               - !Sub
-                - '{Arn}/index/*'
+                - '${Arn}/index/*'
                 - Arn: !GetAtt DynamoDBTable.Arn
           - Effect: Allow
             Action: 'dynamodb:UpdateItem'
