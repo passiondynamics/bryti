@@ -89,11 +89,13 @@ Resources:
           - Effect: Allow
             Action: 'dynamodb:Query'
             Resource:
-              - !Sub 'arn:aws:dynamodb::${AWS::AccountId}:table/${DynamoDBTable}'
-              - !Sub 'arn:aws:dynamodb::${AWS::AccountId}:table/${DynamoDBTable}/index/*'
+              - !GetAtt DynamoDBTable.Arn
+              - !Sub
+                - '{Arn}/index/*'
+                - Arn: !GetAtt DynamoDBTable.Arn
           - Effect: Allow
             Action: 'dynamodb:UpdateItem'
-            Resource: !Sub 'arn:aws:dynamodb::${AWS::AccountId}:table/${DynamoDBTable}'
+            Resource: !GetAtt DynamoDBTable.Arn
       Roles:
         - !Ref LambdaRole
 #      Tags:
