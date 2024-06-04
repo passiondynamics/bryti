@@ -39,6 +39,8 @@ jobs:
     name: Build
     needs: init
     runs-on: ubuntu-latest
+    # Needed for access to vars defined in Github for `dev` and `prod`.
+    environment: ${{needs.init.outputs.deployment_env}}
     env:
       # Use env vars for easier repeated reference.
       artifact_filename: ${{needs.init.outputs.artifact_filename}}
@@ -112,7 +114,6 @@ jobs:
         run: |
           # Use jq to create ENV_VARS w/ env
           export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}"}')
-          echo "$ENV_VARS"
           python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
