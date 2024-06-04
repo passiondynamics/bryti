@@ -86,6 +86,14 @@ Resources:
               - 'logs:CreateLogStream'
               - 'logs:PutLogEvents'
             Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Component}-${Env}:*'
+          - Effect: Allow
+            Action: 'dynamodb:Query'
+            Resource:
+              - !Sub 'arn:aws:dynamodb::${AWS::AccountId}:table/${DynamoDBTable}'
+              - !Sub 'arn:aws:dynamodb::${AWS::AccountId}:table/${DynamoDBTable}/index/*'
+          - Effect: Allow
+            Action: 'dynamodb:UpdateItem'
+            Resource: !Sub 'arn:aws:dynamodb::${AWS::AccountId}:table/${DynamoDBTable}'
       Roles:
         - !Ref LambdaRole
 #      Tags:
