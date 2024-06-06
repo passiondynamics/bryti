@@ -99,6 +99,10 @@ class DeathsAddCommand(AbstractDeathsCommand):
 
 
 class DeathsSetCommand(AbstractDeathsCommand):
+    """
+    Set the broadcaster's death count directly.
+    """
+
     def execute(self, deaths: int) -> str:
         if self.permission != Permission.BROADCASTER:
             return "You don't have permissions for that!"
