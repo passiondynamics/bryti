@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Because we can't derive env variables from other env variables...
+      - name: Debugging
+        run: echo '${{github.event}}'
       - name: Set up pipeline vars
         id: pipeline_vars
         run: |
