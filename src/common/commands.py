@@ -36,6 +36,9 @@ class AbstractCommand(ABC):
         pass
 
 
+# --- status ---
+
+
 class StatusCommand(AbstractCommand):
     """
     Generate a status reply to the ping.
@@ -47,13 +50,12 @@ class StatusCommand(AbstractCommand):
         return f"Ok at {now_str}!"
 
 
-class DeathsInfoCommand(AbstractCommand):
-    """
-    Get info about the broadcaster's deaths.
-    """
+# --- deaths ---
 
-    @staticmethod
-    def _generate_deaths_reply(deaths: DeathState) -> str:
+
+class AbstractDeathsCommand(AbstractCommand):
+    def _generate_reply(self) -> str:
+        deaths = self.state.deaths
         reply = "No deaths yet!"
         if deaths is not None and deaths.count != 0:
             timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
@@ -61,11 +63,17 @@ class DeathsInfoCommand(AbstractCommand):
 
         return reply
 
+
+class DeathsInfoCommand(AbstractDeathsCommand):
+    """
+    Get info about the broadcaster's deaths.
+    """
+
     def execute(self) -> str:
-        return self._generate_deaths_reply(self.state.deaths)
+        return self._generate_reply()
 
 
-class DeathsAddCommand(AbstractCommand):
+class DeathsAddCommand(AbstractDeathsCommand):
     """
     Increment the broadcaster's death count.
     """
@@ -87,10 +95,10 @@ class DeathsAddCommand(AbstractCommand):
         deaths.last_timestamp = now
 
         self.state = self.interfaces.state_table.update_state(self.state)
-        return DeathsInfoCommand._generate_deaths_reply(self.state.deaths)
+        return self._generate_reply()
 
 
-class DeathsSetCommand(AbstractCommand):
+class DeathsSetCommand(AbstractDeathsCommand):
     def execute(self, deaths: int) -> str:
         if self.permission != Permission.BROADCASTER:
             return "You don't have permissions for that!"
@@ -101,7 +109,10 @@ class DeathsSetCommand(AbstractCommand):
         )
 
         self.state = self.interfaces.state_table.update_state(self.state)
-        return DeathsInfoCommand._generate_deaths_reply(self.state.deaths)
+        return self._generate_reply()
+
+
+# --- twitch ---
 
 
 class TwitchConnectCommand(AbstractCommand):
