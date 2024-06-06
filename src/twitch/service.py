@@ -10,9 +10,11 @@ import hmac
 from http import HTTPStatus
 import json
 
-from src.common.commands import (
+from src.common.api_interfaces import APIInterfaces
+from src.common.commands import resolve_command
+from src.common.state_models import (
     Permission,
-    resolve_command,
+    State,
 )
 from src.twitch.interface import TwitchInterface
 from src.twitch.models import (
@@ -39,11 +41,11 @@ class TwitchSignatureMismatchError(Exception):
 class TwitchService:
     def __init__(
         self,
-        twitch_interface: TwitchInterface,
+        api_interfaces: APIInterfaces,
         user_id: str,
         command_prefix: str,
     ):
-        self.twitch_interface = twitch_interface
+        self.api_interfaces = api_interfaces
         self.user_id = user_id
         self.command_prefix = f"!{command_prefix}"
 
@@ -118,26 +120,51 @@ class TwitchService:
             logger.info("Resolving command", command_args=split_msg[1:])
             CommandClass, args = resolve_command(split_msg[1:])
             if CommandClass:
-                # TODO: determine permission by chatting user info.
+                # TODO: in dev, only reply to person who made the PR.
+                state, permission = self.retrieve_event_context(event)
                 logger.info(
                     "Executing command",
                     command=CommandClass,
                     command_args=args,
                 )
                 try:
-                    reply = CommandClass(None, Permission.EVERYBODY).execute(*args)
+                    reply = CommandClass(
+                        self.api_interfaces,
+                        state,
+                        permission,
+                    ).execute(*args)
                 except TypeError as e:
                     reply = "Invalid call to command!"
             else:
                 reply = "Couldn't find that command!"
 
             logger.info("Replying to message", reply=reply)
-            self.twitch_interface.send_chat_message(
+            self.api_interfaces.twitch.send_chat_message(
                 event.broadcaster_user_id,
                 self.user_id,
                 reply,
                 reply_message_id=event.message_id,
             )
+
+    def retrieve_event_context(
+        self,
+        event: TwitchChannelChatMessage,
+    ) -> (State, Permission):
+        """
+        Look up user information/state from the state table.
+        """
+        broadcaster = self.api_interfaces.state_table.get_user_by_twitch(
+            event.broadcaster_user_login
+        )
+        chatter = self.api_interfaces.state_table.get_user_by_twitch(
+            event.chatter_user_login
+        )
+        state = self.api_interfaces.state_table.get_state(broadcaster)
+        permission = state.members.get(chatter, Permission.EVERYBODY)
+        if chatter == broadcaster:
+            permission = Permission.BROADCASTER
+
+        return state, permission
 
     def handle_stream_event(self, event: TwitchStreamOnline | TwitchStreamOffline):
         pass

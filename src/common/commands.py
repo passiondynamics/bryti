@@ -7,22 +7,28 @@ from abc import (
     ABC,
     abstractmethod,
 )
-from datetime import datetime
-from enum import Enum
+from datetime import (
+    datetime,
+    timezone,
+)
 from inspect import isclass
 from typing import List
 
+from src.common.api_interfaces import APIInterfaces
+from src.common.state_models import (
+    DeathState,
+    Permission,
+    State,
+)
 
-class Permission(str, Enum):
-    EVERYBODY = "everybody"
-    MODERATOR = "moderator"
-    BROADCASTER = "broadcaster"
+
+DATETIME_FMT = "%Y-%m-%d @ %-I:%M:%S%P %Z"
 
 
 class AbstractCommand(ABC):
-    # TODO: add type hint for interfaces.
-    def __init__(self, interfaces, permission: Permission):
+    def __init__(self, interfaces: APIInterfaces, state: State, permission: Permission):
         self.interfaces = interfaces
+        self.state = state
         self.permission = permission
 
     @abstractmethod
@@ -30,26 +36,87 @@ class AbstractCommand(ABC):
         pass
 
 
+# --- status ---
+
+
 class StatusCommand(AbstractCommand):
+    """
+    Generate a status reply to the ping.
+    """
+
     def execute(self) -> str:
-        now = datetime.now()
-        now_str = now.strftime("%Y-%m-%d @ %-I:%M:%S%P %Z")
+        now = datetime.now(tz=timezone.utc)
+        now_str = now.strftime(DATETIME_FMT)
         return f"Ok at {now_str}!"
 
 
-class DeathsInfoCommand(AbstractCommand):
+# --- deaths ---
+
+
+class AbstractDeathsCommand(AbstractCommand):
+    def _generate_reply(self) -> str:
+        deaths = self.state.deaths
+        reply = "No deaths yet!"
+        if deaths is not None and deaths.count != 0:
+            timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
+            reply = f"Death count: {deaths.count} | Last death: {timestamp_str}"
+
+        return reply
+
+
+class DeathsInfoCommand(AbstractDeathsCommand):
+    """
+    Get info about the broadcaster's deaths.
+    """
+
     def execute(self) -> str:
-        return "Not implemented yet!"
+        return self._generate_reply()
 
 
-class DeathsAddCommand(AbstractCommand):
+class DeathsAddCommand(AbstractDeathsCommand):
+    """
+    Increment the broadcaster's death count.
+    """
+
+    DEDUP_WINDOW_S = 10
+
     def execute(self) -> str:
-        return "Not implemented yet!"
+        if self.permission < Permission.MODERATOR:
+            return "You don't have permissions for that!"
+
+        deaths = self.state.deaths
+        now = datetime.now(tz=timezone.utc)
+        if (now - deaths.last_timestamp).total_seconds() <= self.DEDUP_WINDOW_S:
+            return (
+                "It's been too soon since they last died! Are you sure they died again?"
+            )
+
+        deaths.count += 1
+        deaths.last_timestamp = now
+
+        self.state = self.interfaces.state_table.update_state(self.state)
+        return self._generate_reply()
 
 
-class DeathsSetCommand(AbstractCommand):
+class DeathsSetCommand(AbstractDeathsCommand):
+    """
+    Set the broadcaster's death count directly.
+    """
+
     def execute(self, deaths: int) -> str:
-        return "Not implemented yet!"
+        if self.permission != Permission.BROADCASTER:
+            return "You don't have permissions for that!"
+
+        self.state.deaths = DeathState(
+            count=deaths,
+            last_timestamp=datetime.now(tz=timezone.utc),
+        )
+
+        self.state = self.interfaces.state_table.update_state(self.state)
+        return self._generate_reply()
+
+
+# --- twitch ---
 
 
 class TwitchConnectCommand(AbstractCommand):

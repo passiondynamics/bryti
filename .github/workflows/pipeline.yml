@@ -39,7 +39,7 @@ jobs:
     name: Build
     needs: init
     runs-on: ubuntu-latest
-    # TODO: remove environment
+    # Needed for access to vars defined in Github for `dev` and `prod`.
     environment: ${{needs.init.outputs.deployment_env}}
     env:
       # Use env vars for easier repeated reference.
@@ -91,7 +91,7 @@ jobs:
           echo "[*] Cleaning up workspace..."
           rm -r requirements.txt package/
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{vars.AWS_REGION}}
           role-to-assume: ${{vars.AWS_DEPLOY_ROLE_ARN}}
@@ -112,7 +112,9 @@ jobs:
       - name: Write env vars to output
         id: write_env_vars
         run: |
-          ENV_VARS='${{toJson(vars)}}' python src/config.py --no-pretty
+          # Use jq to create ENV_VARS w/ env
+          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}"}')
+          python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
       cft_content: ${{steps.write_cft.outputs.cft_content}}
