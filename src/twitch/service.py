@@ -120,6 +120,7 @@ class TwitchService:
             logger.info("Resolving command", command_args=split_msg[1:])
             CommandClass, args = resolve_command(split_msg[1:])
             if CommandClass:
+                # TODO: in dev, only reply to person who made the PR.
                 state, permission = self.retrieve_event_context(event)
                 logger.info(
                     "Executing command",

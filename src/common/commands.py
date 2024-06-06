@@ -56,14 +56,26 @@ class DeathsInfoCommand(AbstractCommand):
         deaths = self.state.deaths
         if deaths is not None and deaths.count != 0:
             timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
-            reply = f"Death count: {deaths.count}\nLast death: {timestamp_str}"
+            reply = f"Death count: {deaths.count} | Last death: {timestamp_str}"
 
         return reply
 
 
 class DeathsAddCommand(AbstractCommand):
+    """
+    Increment the broadcaster's death count.
+    """
+
     def execute(self) -> str:
-        return "Not implemented yet!"
+        deaths = self.state.deaths
+        deaths.count += 1
+        deaths.last_timestamp = datetime.now(tz=timezone.utc)
+
+        self.state = self.interfaces.state_table.update_state(self.state)
+
+        deaths = self.state.deaths
+        timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
+        return f"Death count: {deaths.count} | Last death: {timestamp_str}"
 
 
 class DeathsSetCommand(AbstractCommand):
