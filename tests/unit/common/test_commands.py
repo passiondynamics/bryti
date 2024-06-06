@@ -56,6 +56,21 @@ def test_deaths_info_command_with_deaths(mock_api_interfaces, mock_state):
     assert actual == "Death count: 4 | Last death: 2006-01-02 @ 3:04:05pm UTC"
 
 
+def test_deaths_add_command_bad_permissions(mock_api_interfaces, mock_state):
+    actual = DeathsAddCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
+    assert actual == "You don't have permissions for that!"
+
+
+@patch("src.common.commands.datetime")
+def test_deaths_add_command_within_window(mock_datetime, mock_api_interfaces, mock_state):
+    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 14, tzinfo=timezone.utc)
+
+    actual = DeathsAddCommand(mock_api_interfaces, mock_state, Permission.MODERATOR).execute()
+
+    assert actual == "It's been too soon since they last died! Are you sure they died again?"
+
+
 @patch("src.common.commands.datetime")
 def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state):
     mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
@@ -69,7 +84,7 @@ def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state):
     )
     mock_api_interfaces.state_table.update_state.return_value = updated_state
 
-    actual = DeathsAddCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
+    actual = DeathsAddCommand(mock_api_interfaces, mock_state, Permission.MODERATOR).execute()
 
     assert actual == "Death count: 5 | Last death: 2024-01-02 @ 3:04:05pm UTC"
     mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)

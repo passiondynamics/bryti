@@ -66,10 +66,19 @@ class DeathsAddCommand(AbstractCommand):
     Increment the broadcaster's death count.
     """
 
+    DEDUP_WINDOW_S = 10
+
     def execute(self) -> str:
+        if self.permission != Permission.MODERATOR:
+            return "You don't have permissions for that!"
+
         deaths = self.state.deaths
+        now = datetime.now(tz=timezone.utc)
+        if (now - deaths.last_timestamp).total_seconds() <= self.DEDUP_WINDOW_S:
+            return "It's been too soon since they last died! Are you sure they died again?"
+
         deaths.count += 1
-        deaths.last_timestamp = datetime.now(tz=timezone.utc)
+        deaths.last_timestamp = now
 
         self.state = self.interfaces.state_table.update_state(self.state)
 
