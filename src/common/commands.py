@@ -69,7 +69,7 @@ class DeathsAddCommand(AbstractCommand):
     DEDUP_WINDOW_S = 10
 
     def execute(self) -> str:
-        if self.permission != Permission.MODERATOR:
+        if self.permission < Permission.MODERATOR:
             return "You don't have permissions for that!"
 
         deaths = self.state.deaths

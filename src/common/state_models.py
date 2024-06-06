@@ -21,6 +21,22 @@ class Permission(str, Enum):
     MODERATOR = "moderator"
     BROADCASTER = "broadcaster"
 
+    def __lt__(self, other) -> bool:
+        members = list(Permission.__members__.values())
+        return members.index(self) < members.index(other)
+
+    def __le__(self, other) -> bool:
+        members = list(Permission.__members__.values())
+        return members.index(self) <= members.index(other)
+
+    def __gt__(self, other) -> bool:
+        members = list(Permission.__members__.values())
+        return members.index(self) > members.index(other)
+
+    def __ge__(self, other) -> bool:
+        members = list(Permission.__members__.values())
+        return members.index(self) >= members.index(other)
+
 
 ISOUTCDatetime = Annotated[
     datetime,

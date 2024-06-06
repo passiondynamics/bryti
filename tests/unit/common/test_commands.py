@@ -61,18 +61,26 @@ def test_deaths_add_command_bad_permissions(mock_api_interfaces, mock_state):
     assert actual == "You don't have permissions for that!"
 
 
+@pytest.mark.parametrize(
+    "permission",
+    [Permission.MODERATOR, Permission.BROADCASTER],
+)
 @patch("src.common.commands.datetime")
-def test_deaths_add_command_within_window(mock_datetime, mock_api_interfaces, mock_state):
+def test_deaths_add_command_within_window(mock_datetime, mock_api_interfaces, mock_state, permission):
     mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
     mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 14, tzinfo=timezone.utc)
 
-    actual = DeathsAddCommand(mock_api_interfaces, mock_state, Permission.MODERATOR).execute()
+    actual = DeathsAddCommand(mock_api_interfaces, mock_state, permission).execute()
 
     assert actual == "It's been too soon since they last died! Are you sure they died again?"
 
 
+@pytest.mark.parametrize(
+    "permission",
+    [Permission.MODERATOR, Permission.BROADCASTER],
+)
 @patch("src.common.commands.datetime")
-def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state):
+def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state, permission):
     mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
     mock_datetime.now.return_value = datetime(2024, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
     updated_state = State(
@@ -84,7 +92,7 @@ def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state):
     )
     mock_api_interfaces.state_table.update_state.return_value = updated_state
 
-    actual = DeathsAddCommand(mock_api_interfaces, mock_state, Permission.MODERATOR).execute()
+    actual = DeathsAddCommand(mock_api_interfaces, mock_state, permission).execute()
 
     assert actual == "Death count: 5 | Last death: 2024-01-02 @ 3:04:05pm UTC"
     mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)
