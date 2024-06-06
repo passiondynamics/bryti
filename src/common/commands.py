@@ -75,7 +75,9 @@ class DeathsAddCommand(AbstractCommand):
         deaths = self.state.deaths
         now = datetime.now(tz=timezone.utc)
         if (now - deaths.last_timestamp).total_seconds() <= self.DEDUP_WINDOW_S:
-            return "It's been too soon since they last died! Are you sure they died again?"
+            return (
+                "It's been too soon since they last died! Are you sure they died again?"
+            )
 
         deaths.count += 1
         deaths.last_timestamp = now
