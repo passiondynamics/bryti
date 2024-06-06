@@ -19,7 +19,7 @@ jobs:
     steps:
       # Because we can't derive env variables from other env variables...
       - name: Debugging
-        run: echo '${{github.event}}'
+        run: echo '${{toJson(github)}}'
       - name: Set up pipeline vars
         id: pipeline_vars
         run: |
