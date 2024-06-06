@@ -16,6 +16,7 @@ from typing import List
 
 from src.common.api_interfaces import APIInterfaces
 from src.common.state_models import (
+    DeathState,
     Permission,
     State,
 )
@@ -51,14 +52,17 @@ class DeathsInfoCommand(AbstractCommand):
     Get info about the broadcaster's deaths.
     """
 
-    def execute(self) -> str:
+    @staticmethod
+    def _generate_deaths_reply(deaths: DeathState) -> str:
         reply = "No deaths yet!"
-        deaths = self.state.deaths
         if deaths is not None and deaths.count != 0:
             timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
             reply = f"Death count: {deaths.count} | Last death: {timestamp_str}"
 
         return reply
+
+    def execute(self) -> str:
+        return self._generate_deaths_reply(self.state.deaths)
 
 
 class DeathsAddCommand(AbstractCommand):
@@ -83,15 +87,21 @@ class DeathsAddCommand(AbstractCommand):
         deaths.last_timestamp = now
 
         self.state = self.interfaces.state_table.update_state(self.state)
-
-        deaths = self.state.deaths
-        timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
-        return f"Death count: {deaths.count} | Last death: {timestamp_str}"
+        return DeathsInfoCommand._generate_deaths_reply(self.state.deaths)
 
 
 class DeathsSetCommand(AbstractCommand):
     def execute(self, deaths: int) -> str:
-        return "Not implemented yet!"
+        if self.permission != Permission.BROADCASTER:
+            return "You don't have permissions for that!"
+
+        self.state.deaths = DeathState(
+            count=deaths,
+            last_timestamp=datetime.now(tz=timezone.utc),
+        )
+
+        self.state = self.interfaces.state_table.update_state(self.state)
+        return DeathsInfoCommand._generate_deaths_reply(self.state.deaths)
 
 
 class TwitchConnectCommand(AbstractCommand):

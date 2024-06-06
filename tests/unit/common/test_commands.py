@@ -98,10 +98,32 @@ def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state, perm
     mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)
 
 
-def test_deaths_set_command(mock_api_interfaces, mock_state):
-    expected = "Not implemented yet!"
-    actual = DeathsSetCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute(0)
-    assert actual == expected
+@pytest.mark.parametrize(
+    "permission",
+    [Permission.EVERYBODY, Permission.MODERATOR],
+)
+def test_deaths_set_command_bad_permissions(mock_api_interfaces, mock_state, permission):
+    actual = DeathsSetCommand(mock_api_interfaces, mock_state, permission).execute(0)
+    assert actual == "You don't have permissions for that!"
+
+
+@patch("src.common.commands.datetime")
+def test_deaths_set_command(mock_datetime, mock_api_interfaces, mock_state):
+    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    mock_datetime.now.return_value = datetime(2024, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
+    updated_state = State(
+        user="mock-user",
+        deaths=DeathState(
+            count=7,
+            last_timestamp="2024-01-02T15:04:05Z",
+        ),
+    )
+    mock_api_interfaces.state_table.update_state.return_value = updated_state
+
+    actual = DeathsSetCommand(mock_api_interfaces, mock_state, Permission.BROADCASTER).execute(7)
+
+    assert actual == "Death count: 7 | Last death: 2024-01-02 @ 3:04:05pm UTC"
+    mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)
 
 
 def test_twitch_connect_command(mock_api_interfaces, mock_state):
