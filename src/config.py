@@ -9,6 +9,7 @@ ENV_VAR_KEYS = [
     "TWITCH_CLIENT_ID",
     "TWITCH_CLIENT_SECRET",
     "TWITCH_USER_ID",
+    "ASSIGNEE_IDS",
 ]
 ENV_VARS_FILEPATH = "env.json"
 

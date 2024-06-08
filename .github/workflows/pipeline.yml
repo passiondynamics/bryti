@@ -34,17 +34,24 @@ jobs:
           rn="${{github.event.repository.name}}"
           pi="${{github.event.repository.owner.login}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
           af="artifact-$pi.zip"
-          [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
+          if [ "${{github.event_name}}" == "push" ]; then
+              de="prod"
+              ai="null"
+          else
+              de="dev"
+              ai=$(echo '${{toJSON(github.event.pull_request)}}' | jq "[.user.id] + [.assignees[].id] | unique")
+          fi
           abk="$de/$rn/$af"
 
           echo "[*] Pipeline vars:"
-          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a "$GITHUB_OUTPUT"
+          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\nassignee_ids=$ai\n" | tee -a "$GITHUB_OUTPUT"
     outputs:
       artifact_filename: ${{steps.pipeline_vars.outputs.artifact_filename}}
       artifact_bucket_key: ${{steps.pipeline_vars.outputs.artifact_bucket_key}}
       deployment_env: ${{steps.pipeline_vars.outputs.deployment_env}}
       repository_name: ${{steps.pipeline_vars.outputs.repository_name}}
       pipeline_id: ${{steps.pipeline_vars.outputs.pipeline_id}}
+      assignee_ids: ${{steps.pipeline_vars.outputs.assignee_ids}}
   build:
     name: Build
     needs: init
@@ -123,7 +130,7 @@ jobs:
         id: write_env_vars
         run: |
           # Use jq to create ENV_VARS w/ env
-          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}"}')
+          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}", "ASSIGNEE_IDS": ${{needs.init.outputs.assignee_ids}}}')
           python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
