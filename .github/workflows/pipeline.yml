@@ -27,7 +27,6 @@ jobs:
       - name: Debugging
         run: |
           echo '${{toJson(github)}}'
-          exit 1
       - name: Set up pipeline vars
         id: pipeline_vars
         run: |
@@ -39,19 +38,19 @@ jobs:
               ai="null"
           else
               de="dev"
-              ai=$(echo '${{toJSON(github.event.pull_request)}}' | jq "[.user.id] + [.assignees[].id] | unique")
+              gai=$(echo '${{toJSON(github.event.pull_request)}}' | jq "[.user.id] + [.assignees[].id] | unique")
           fi
           abk="$de/$rn/$af"
 
           echo "[*] Pipeline vars:"
-          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\nassignee_ids=$ai\n" | tee -a "$GITHUB_OUTPUT"
+          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\ngithub_assignee_ids=$gai\n" | tee -a "$GITHUB_OUTPUT"
     outputs:
       artifact_filename: ${{steps.pipeline_vars.outputs.artifact_filename}}
       artifact_bucket_key: ${{steps.pipeline_vars.outputs.artifact_bucket_key}}
       deployment_env: ${{steps.pipeline_vars.outputs.deployment_env}}
       repository_name: ${{steps.pipeline_vars.outputs.repository_name}}
       pipeline_id: ${{steps.pipeline_vars.outputs.pipeline_id}}
-      assignee_ids: ${{steps.pipeline_vars.outputs.assignee_ids}}
+      github_assignee_ids: ${{steps.pipeline_vars.outputs.github_assignee_ids}}
   build:
     name: Build
     needs: init
@@ -130,7 +129,7 @@ jobs:
         id: write_env_vars
         run: |
           # Use jq to create ENV_VARS w/ env
-          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}", "ASSIGNEE_IDS": ${{needs.init.outputs.assignee_ids}}}')
+          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}", "ASSIGNEE_IDS": ${{needs.init.outputs.github_assignee_ids}}}')
           python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
