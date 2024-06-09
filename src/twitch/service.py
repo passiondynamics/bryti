@@ -124,6 +124,8 @@ class TwitchService:
                 state, permission = self.retrieve_event_context(event)
                 logger.info(
                     "Executing command",
+                    state=state,
+                    permission=permission,
                     command=CommandClass,
                     command_args=args,
                 )
