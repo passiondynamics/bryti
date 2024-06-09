@@ -160,7 +160,7 @@ jobs:
         with:
           name: ${{env.repository_name}}-${{env.deployment_env}}
           template: cft.yml
-          capabilities: CAPABILITY_NAMED_IAM
+          capabilities: CAPABILITY_AUTO_EXPAND
           parameter-overrides: >-
             Component="${{env.repository_name}}",
             Env="${{env.deployment_env}}",
