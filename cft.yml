@@ -108,8 +108,6 @@ Resources:
       AttributeDefinitions:
         - AttributeName: user
           AttributeType: S
-        - AttributeName: twitch_user_id
-          AttributeType: S
         - AttributeName: discord_user_id
           AttributeType: S
         - AttributeName: github_user_id
