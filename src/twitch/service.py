@@ -161,7 +161,10 @@ class TwitchService:
         if broadcaster is not None:
             state = self.api_interfaces.state_table.get_state(broadcaster.user)
         else:
-            state = State(user=event.broadcaster_user_login, twitch_user_id=event.broadcaster_user_id)
+            state = State(
+                user=event.broadcaster_user_login,
+                twitch_user_id=event.broadcaster_user_id,
+            )
 
         permission = Permission.EVERYBODY
         if event.broadcaster_user_id == event.chatter_user_id:
