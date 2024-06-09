@@ -155,16 +155,23 @@ class TwitchService:
         """
         Look up user information/state from the state table.
         """
-        broadcaster = self.api_interfaces.state_table.get_user_by_twitch(
+        broadcaster = self.api_interfaces.state_table.lookup_by_twitch(
             event.broadcaster_user_id
         )
-        chatter = self.api_interfaces.state_table.get_user_by_twitch(
-            event.chatter_user_id
-        )
-        state = self.api_interfaces.state_table.get_state(broadcaster)
-        permission = state.members.get(chatter, Permission.EVERYBODY)
-        if chatter == broadcaster:
+        if broadcaster is not None:
+            state = self.api_interfaces.state_table.get_state(broadcaster.user)
+        else:
+            state = State(user=event.broadcaster_user_login, twitch_user_id=event.broadcaster_user_id)
+
+        permission = Permission.EVERYBODY
+        if event.broadcaster_user_id == event.chatter_user_id:
             permission = Permission.BROADCASTER
+        else:
+            chatter = self.api_interfaces.state_table.lookup_by_twitch(
+                event.chatter_user_id
+            )
+            if chatter is not None and chatter.user in state.members:
+                permission = state.members[chatter.user]
 
         return state, permission
 

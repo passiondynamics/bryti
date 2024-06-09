@@ -5,7 +5,10 @@ from unittest.mock import (
     patch,
 )
 
-from src.common.state_models import State
+from src.common.state_models import (
+    LookupFields,
+    State,
+)
 from src.common.state_table_interface import (
     StateTableInterface,
     ddb_to_dict,
@@ -89,13 +92,13 @@ def test_query_index(mock_dynamodb_client, state_interface):
     "ddb_items, expected",
     [
         ([], None),
-        ([MOCK_DDB_ITEM], "mock-user"),
+        ([MOCK_DDB_ITEM], LookupFields(user="mock-user")),
     ],
 )
-def test_get_user_by_twitch(mock_dynamodb_client, state_interface, ddb_items, expected):
+def test_lookup_by_twitch(mock_dynamodb_client, state_interface, ddb_items, expected):
     mock_dynamodb_client.query.return_value = {"Items": ddb_items}
 
-    actual = state_interface.get_user_by_twitch("mock-twitch-user-id")
+    actual = state_interface.lookup_by_twitch("mock-twitch-user-id")
 
     assert actual == expected
     mock_dynamodb_client.query.assert_called_once_with(
@@ -112,13 +115,13 @@ def test_get_user_by_twitch(mock_dynamodb_client, state_interface, ddb_items, ex
     "ddb_items, expected",
     [
         ([], None),
-        ([MOCK_DDB_ITEM], "mock-user"),
+        ([MOCK_DDB_ITEM], LookupFields(user="mock-user")),
     ],
 )
-def test_get_user_by_discord(mock_dynamodb_client, state_interface, ddb_items, expected):
+def test_lookup_by_discord(mock_dynamodb_client, state_interface, ddb_items, expected):
     mock_dynamodb_client.query.return_value = {"Items": ddb_items}
 
-    actual = state_interface.get_user_by_discord("mock-discord-user-id")
+    actual = state_interface.lookup_by_discord("mock-discord-user-id")
 
     assert actual == expected
     mock_dynamodb_client.query.assert_called_once_with(
@@ -135,13 +138,13 @@ def test_get_user_by_discord(mock_dynamodb_client, state_interface, ddb_items, e
     "ddb_items, expected",
     [
         ([], None),
-        ([MOCK_DDB_ITEM], "mock-user"),
+        ([MOCK_DDB_ITEM], LookupFields(user="mock-user")),
     ],
 )
-def test_get_user_by_github(mock_dynamodb_client, state_interface, ddb_items, expected):
+def test_lookup_by_github(mock_dynamodb_client, state_interface, ddb_items, expected):
     mock_dynamodb_client.query.return_value = {"Items": ddb_items}
 
-    actual = state_interface.get_user_by_github("mock-github-user-id")
+    actual = state_interface.lookup_by_github("mock-github-user-id")
 
     assert actual == expected
     mock_dynamodb_client.query.assert_called_once_with(

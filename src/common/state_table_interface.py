@@ -9,7 +9,10 @@ from typing import (
     Optional,
 )
 
-from src.common.state_models import State
+from src.common.state_models import (
+    LookupFields,
+    State,
+)
 
 
 def ddb_to_dict(item: dict) -> dict:
@@ -76,50 +79,37 @@ class StateTableInterface:
         response = self.dynamodb_client.query(**query_args)
         return [ddb_to_dict(item) for item in response["Items"]]
 
-    def get_user_by_twitch(self, twitch_user_id: str) -> Optional[str]:
+    def _lookup(self, index_name: str, key: str, value: str) -> Optional[LookupFields]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Twitch user ID.
-
-        :param twitch_user_id: The ID of the Twitch user to lookup.
-        :return: The corresponding user primary key.
+        Helper to query a state table lookup index, to get the corresponding user primary key + IDs for a given platform user ID.
         """
 
-        users = self._query(
-            "twitch_user_id",
-            twitch_user_id,
-            index_name="twitch-lookup-index",
-        )
-        return users[0]["user"] if len(users) > 0 else None
+        users = self._query(key, value, index_name=index_name)
+        if len(users) == 0:
+            return None
 
-    def get_user_by_discord(self, discord_user_id: str) -> Optional[str]:
+        return LookupFields.model_validate(users[0])
+
+    def lookup_by_twitch(self, twitch_user_id: str) -> Optional[LookupFields]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Discord user ID.
-
-        :param discord_user_id: The ID of the Discord user to lookup.
-        :return: The corresponding user primary key.
+        Looks up a user by a Twitch user ID.
         """
 
-        users = self._query(
-            "discord_user_id",
-            discord_user_id,
-            index_name="discord-lookup-index",
-        )
-        return users[0]["user"] if len(users) > 0 else None
+        return self._lookup("twitch-lookup-index", "twitch_user_id", twitch_user_id)
 
-    def get_user_by_github(self, github_user_id: str) -> Optional[str]:
+    def lookup_by_discord(self, discord_user_id: str) -> Optional[LookupFields]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Github user ID.
-
-        :param discord_user_id: The ID of the Github user to lookup.
-        :return: The corresponding user primary key.
+        Looks up a user by a Discord user ID.
         """
 
-        users = self._query(
-            "github_user_id",
-            github_user_id,
-            index_name="github-lookup-index",
-        )
-        return users[0]["user"] if len(users) > 0 else None
+        return self._lookup("discord-lookup-index", "discord_user_id", discord_user_id)
+
+    def lookup_by_github(self, github_user_id: str) -> Optional[LookupFields]:
+        """
+        Looks up a user by a Discord user ID.
+        """
+
+        return self._lookup("github-lookup-index", "github_user_id", github_user_id)
 
     def get_state(self, user: str) -> Optional[State]:
         """
