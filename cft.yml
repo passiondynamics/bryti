@@ -112,6 +112,8 @@ Resources:
           AttributeType: S
         - AttributeName: discord_user_id
           AttributeType: S
+        - AttributeName: github_user_id
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       GlobalSecondaryIndexes:
         - IndexName: twitch-user-id-index
@@ -128,6 +130,13 @@ Resources:
           Projection:
             ProjectionType: INCLUDE
             NonKeyAttributes: [twitch_user_id, github_user_id]
+        - IndexName: github-user-id-index
+          KeySchema:
+            - AttributeName: github_user_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes: [twitch_user_id, discord_user_id]
       KeySchema:
         - AttributeName: user
           KeyType: HASH
