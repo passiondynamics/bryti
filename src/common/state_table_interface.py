@@ -148,7 +148,9 @@ class StateTableInterface:
                 if n == "version":
                     # Increment the version of the item.
                     update_expressions.append(attribute_expression + " + :one")
-                    condition_expression = attribute_expression
+                    condition_expression = (
+                        f"attribute_not_exists({an}) OR {attribute_expression}"
+                    )
                 else:
                     update_expressions.append(attribute_expression)
 

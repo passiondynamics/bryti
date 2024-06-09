@@ -199,6 +199,6 @@ def test_update_state(mock_dynamodb_client, state_interface):
             ":ac": {"N": "1"},
         },
         UpdateExpression="SET #ab = :ab, #ac = :ac + :one",
-        ConditionExpression="#ac = :ac",
+        ConditionExpression="attribute_not_exists(#ac) OR #ac = :ac",
         ReturnValues="ALL_NEW",
     )
