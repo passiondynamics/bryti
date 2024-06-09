@@ -76,34 +76,48 @@ class StateTableInterface:
         response = self.dynamodb_client.query(**query_args)
         return [ddb_to_dict(item) for item in response["Items"]]
 
-    # TODO: use Twitch user ID instead (bc not mutable).
-    def get_user_by_twitch(self, twitch_username: str) -> Optional[str]:
+    def get_user_by_twitch(self, twitch_user_id: str) -> Optional[str]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Twitch username.
+        Queries the state table to lookup the corresponding user primary key for a given Twitch user ID.
 
-        :param twitch_username: The Twitch username of the user to lookup.
+        :param twitch_user_id: The ID of the Twitch user to lookup.
         :return: The corresponding user primary key.
         """
 
         users = self._query(
-            "twitch_username",
-            twitch_username,
-            index_name="twitch-username-index",
+            "twitch_user_id",
+            twitch_user_id,
+            index_name="twitch-user-id-index",
         )
         return users[0]["user"] if len(users) > 0 else None
 
-    def get_user_by_discord(self, discord_username: str) -> Optional[str]:
+    def get_user_by_discord(self, discord_user_id: str) -> Optional[str]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Discord username.
+        Queries the state table to lookup the corresponding user primary key for a given Discord user ID.
 
-        :param discord_username: The Discord username of the user to lookup.
+        :param discord_user_id: The ID of the Discord user to lookup.
         :return: The corresponding user primary key.
         """
 
         users = self._query(
-            "discord_username",
-            discord_username,
-            index_name="discord-username-index",
+            "discord_user_id",
+            discord_user_id,
+            index_name="discord-user-id-index",
+        )
+        return users[0]["user"] if len(users) > 0 else None
+
+    def get_user_by_github(self, github_user_id: str) -> Optional[str]:
+        """
+        Queries the state table to lookup the corresponding user primary key for a given Github user ID.
+
+        :param discord_user_id: The ID of the Github user to lookup.
+        :return: The corresponding user primary key.
+        """
+
+        users = self._query(
+            "github_user_id",
+            github_user_id,
+            index_name="github-user-id-index",
         )
         return users[0]["user"] if len(users) > 0 else None
 

@@ -24,9 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Because we can't derive env variables from other env variables...
-      - name: Debugging
-        run: |
-          echo '${{toJson(github)}}'
       - name: Set up pipeline vars
         id: pipeline_vars
         run: |
@@ -35,10 +32,10 @@ jobs:
           af="artifact-$pi.zip"
           if [ "${{github.event_name}}" == "push" ]; then
               de="prod"
-              ai="null"
+              gai="null"
           else
               de="dev"
-              gai=$(echo '${{toJSON(github.event.pull_request)}}' | jq -c "[.user.id] + [.assignees[].id] | unique")
+              gai=$(echo '${{toJSON(github.event.pull_request)}}' | jq -c "[.user.id | tostring] + [.assignees[].id | tostring] | unique")
           fi
           abk="$de/$rn/$af"
 
@@ -128,8 +125,8 @@ jobs:
       - name: Write env vars to output
         id: write_env_vars
         run: |
-          # Use jq to create ENV_VARS w/ env
-          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}", "ASSIGNEE_IDS": ${{needs.init.outputs.github_assignee_ids}}}')
+          # Use jq to create ENV_VARS w/ env and PR author details.
+          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}", "GITHUB_ASSIGNEE_IDS": ${{needs.init.outputs.github_assignee_ids}}}')
           python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:

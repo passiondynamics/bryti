@@ -67,17 +67,17 @@ DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE = {
 
 MOCK_STREAM_ONLINE_EVENT = {
     "broadcaster_user_id": "mock-broadcaster-id",
-    "broadcaster_user_login": "mock-login",
-    "broadcaster_user_name": "mock-name",
+    "broadcaster_user_login": "mock-broadcaster-login",
+    "broadcaster_user_name": "mock-broadcaster-name",
     "id": "mock-id",
     "type": "mock-type",
     "started_at": "mock-timestamp",
 }
 
 MOCK_STREAM_OFFLINE_EVENT = {
-    "broadcaster_user_id": "mock-id",
-    "broadcaster_user_login": "mock-login",
-    "broadcaster_user_name": "mock-name",
+    "broadcaster_user_id": "mock-broadcaster-id",
+    "broadcaster_user_login": "mock-broadcaster-login",
+    "broadcaster_user_name": "mock-broadcaster-name",
 }
 
 
@@ -262,21 +262,21 @@ def test_handle_chat_message_valid_command(mock_resolve_command, mock_retrieve_e
 
 
 @pytest.mark.parametrize(
-    "chatter_login, expected_permission",
+    "chatter_user, expected_permission",
     [
         ("mock-user-1", Permission.BROADCASTER),
         ("mock-user-2", Permission.MODERATOR),
         ("mock-user-3", Permission.EVERYBODY),
     ],
 )
-def test_retrieve_event_context(mock_api_interfaces, twitch_service, chatter_login, expected_permission):
+def test_retrieve_event_context(mock_api_interfaces, twitch_service, chatter_user, expected_permission):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
 
-    def mock_get_user_by_twitch(twitch_username: str):
-        if twitch_username == "mock-broadcaster-login":
+    def mock_get_user_by_twitch(twitch_user_id: str):
+        if twitch_user_id == "mock-broadcaster-id":
             return "mock-user-1"
-        elif twitch_username == "mock-chatter-login":
-            return chatter_login
+        elif twitch_user_id == "mock-chatter-id":
+            return chatter_user
 
     mock_api_interfaces.state_table.get_user_by_twitch.side_effect = mock_get_user_by_twitch
     state = State(user="mock-user-1", members={"mock-user-2": Permission.MODERATOR})
@@ -287,8 +287,8 @@ def test_retrieve_event_context(mock_api_interfaces, twitch_service, chatter_log
 
     assert actual == expected
     assert mock_api_interfaces.state_table.get_user_by_twitch.call_args_list == [
-        call("mock-broadcaster-login"),
-        call("mock-chatter-login"),
+        call("mock-broadcaster-id"),
+        call("mock-chatter-id"),
     ]
     mock_api_interfaces.state_table.get_state.assert_called_once_with("mock-user-1")
 

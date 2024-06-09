@@ -54,8 +54,9 @@ class DeathState(BaseModel):
 
 class State(BaseModel):
     user: str
-    twitch_username: Optional[str] = None
-    discord_username: Optional[str] = None
+    twitch_user_id: Optional[str] = None
+    discord_user_id: Optional[str] = None
+    github_user_id: Optional[str] = None
     members: Dict[str, Permission] = {}
     deaths: Optional[DeathState] = None
     version: int = 0

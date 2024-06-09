@@ -154,10 +154,10 @@ class TwitchService:
         Look up user information/state from the state table.
         """
         broadcaster = self.api_interfaces.state_table.get_user_by_twitch(
-            event.broadcaster_user_login
+            event.broadcaster_user_id
         )
         chatter = self.api_interfaces.state_table.get_user_by_twitch(
-            event.chatter_user_login
+            event.chatter_user_id
         )
         state = self.api_interfaces.state_table.get_state(broadcaster)
         permission = state.members.get(chatter, Permission.EVERYBODY)
