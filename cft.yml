@@ -123,12 +123,6 @@ Resources:
           Projection:
             ProjectionType: INCLUDE
             NonKeyAttributes: [discord_user_id, github_user_id]
-        - IndexName: discord-user-id-index
-          KeySchema:
-            - AttributeName: discord_user_id
-              KeyType: HASH
-          Projection:
-            ProjectionType: KEYS_ONLY
         - IndexName: github-user-id-index
           KeySchema:
             - AttributeName: github_user_id
