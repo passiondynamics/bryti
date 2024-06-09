@@ -87,7 +87,7 @@ class StateTableInterface:
         users = self._query(
             "twitch_user_id",
             twitch_user_id,
-            index_name="twitch-user-id-index",
+            index_name="twitch-lookup-index",
         )
         return users[0]["user"] if len(users) > 0 else None
 
@@ -102,7 +102,7 @@ class StateTableInterface:
         users = self._query(
             "discord_user_id",
             discord_user_id,
-            index_name="discord-user-id-index",
+            index_name="discord-lookup-index",
         )
         return users[0]["user"] if len(users) > 0 else None
 
@@ -117,7 +117,7 @@ class StateTableInterface:
         users = self._query(
             "github_user_id",
             github_user_id,
-            index_name="github-user-id-index",
+            index_name="github-lookup-index",
         )
         return users[0]["user"] if len(users) > 0 else None
 

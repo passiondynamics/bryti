@@ -104,7 +104,7 @@ def test_get_user_by_twitch(mock_dynamodb_client, state_interface, ddb_items, ex
         ExpressionAttributeNames={"#pk": "twitch_user_id"},
         ExpressionAttributeValues={":pk": {"S": "mock-twitch-user-id"}},
         Limit=1,
-        IndexName="twitch-user-id-index",
+        IndexName="twitch-lookup-index",
     )
 
 
@@ -127,7 +127,7 @@ def test_get_user_by_discord(mock_dynamodb_client, state_interface, ddb_items, e
         ExpressionAttributeNames={"#pk": "discord_user_id"},
         ExpressionAttributeValues={":pk": {"S": "mock-discord-user-id"}},
         Limit=1,
-        IndexName="discord-user-id-index",
+        IndexName="discord-lookup-index",
     )
 
 
@@ -150,7 +150,7 @@ def test_get_user_by_github(mock_dynamodb_client, state_interface, ddb_items, ex
         ExpressionAttributeNames={"#pk": "github_user_id"},
         ExpressionAttributeValues={":pk": {"S": "mock-github-user-id"}},
         Limit=1,
-        IndexName="github-user-id-index",
+        IndexName="github-lookup-index",
     )
 
 
