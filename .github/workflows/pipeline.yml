@@ -35,7 +35,7 @@ jobs:
               gai="null"
           else
               de="dev"
-              gai=$(echo '${{toJSON(github.event.pull_request)}}' | jq -c "[.user.id | tostring] + [.assignees[].id | tostring] | unique")
+              gai=$(jq -cn '["${{github.event.pull_request.user.id}}"] + [${{toJSON(github.event.pull_request.assignees)}}[].id | tostring] | unique')
           fi
           abk="$de/$rn/$af"
 
