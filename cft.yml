@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-Transform: AWS::LanguageExtensions
 Parameters:
   Component:
     Type: String
@@ -109,24 +108,35 @@ Resources:
       AttributeDefinitions:
         - AttributeName: user
           AttributeType: S
-        - AttributeName: twitch_username
+        - AttributeName: twitch_user_id
           AttributeType: S
-        - AttributeName: discord_username
+        - AttributeName: discord_user_id
+          AttributeType: S
+        - AttributeName: github_user_id
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
       GlobalSecondaryIndexes:
-        - IndexName: twitch-username-index
+        - IndexName: twitch-lookup-index
           KeySchema:
-            - AttributeName: twitch_username
+            - AttributeName: twitch_user_id
               KeyType: HASH
           Projection:
-            ProjectionType: KEYS_ONLY
-        - IndexName: discord-username-index
+            ProjectionType: INCLUDE
+            NonKeyAttributes: [discord_user_id, github_user_id]
+        - IndexName: discord-lookup-index
           KeySchema:
-            - AttributeName: discord_username
+            - AttributeName: discord_user_id
               KeyType: HASH
           Projection:
-            ProjectionType: KEYS_ONLY
+            ProjectionType: INCLUDE
+            NonKeyAttributes: [twitch_user_id, github_user_id]
+        - IndexName: github-lookup-index
+          KeySchema:
+            - AttributeName: github_user_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes: [twitch_user_id, discord_user_id]
       KeySchema:
         - AttributeName: user
           KeyType: HASH

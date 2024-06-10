@@ -5,7 +5,10 @@ from unittest.mock import (
     patch,
 )
 
-from src.common.state_models import State
+from src.common.state_models import (
+    LookupFields,
+    State,
+)
 from src.common.state_table_interface import (
     StateTableInterface,
     ddb_to_dict,
@@ -89,22 +92,22 @@ def test_query_index(mock_dynamodb_client, state_interface):
     "ddb_items, expected",
     [
         ([], None),
-        ([MOCK_DDB_ITEM], "mock-user"),
+        ([MOCK_DDB_ITEM], LookupFields(user="mock-user")),
     ],
 )
-def test_get_user_by_twitch(mock_dynamodb_client, state_interface, ddb_items, expected):
+def test_lookup_by_twitch(mock_dynamodb_client, state_interface, ddb_items, expected):
     mock_dynamodb_client.query.return_value = {"Items": ddb_items}
 
-    actual = state_interface.get_user_by_twitch("mock-twitch-username")
+    actual = state_interface.lookup_by_twitch("mock-twitch-user-id")
 
     assert actual == expected
     mock_dynamodb_client.query.assert_called_once_with(
         TableName="mock-table-name",
         KeyConditionExpression="#pk = :pk",
-        ExpressionAttributeNames={"#pk": "twitch_username"},
-        ExpressionAttributeValues={":pk": {"S": "mock-twitch-username"}},
+        ExpressionAttributeNames={"#pk": "twitch_user_id"},
+        ExpressionAttributeValues={":pk": {"S": "mock-twitch-user-id"}},
         Limit=1,
-        IndexName="twitch-username-index",
+        IndexName="twitch-lookup-index",
     )
 
 
@@ -112,22 +115,45 @@ def test_get_user_by_twitch(mock_dynamodb_client, state_interface, ddb_items, ex
     "ddb_items, expected",
     [
         ([], None),
-        ([MOCK_DDB_ITEM], "mock-user"),
+        ([MOCK_DDB_ITEM], LookupFields(user="mock-user")),
     ],
 )
-def test_get_user_by_discord(mock_dynamodb_client, state_interface, ddb_items, expected):
+def test_lookup_by_discord(mock_dynamodb_client, state_interface, ddb_items, expected):
     mock_dynamodb_client.query.return_value = {"Items": ddb_items}
 
-    actual = state_interface.get_user_by_discord("mock-discord-username")
+    actual = state_interface.lookup_by_discord("mock-discord-user-id")
 
     assert actual == expected
     mock_dynamodb_client.query.assert_called_once_with(
         TableName="mock-table-name",
         KeyConditionExpression="#pk = :pk",
-        ExpressionAttributeNames={"#pk": "discord_username"},
-        ExpressionAttributeValues={":pk": {"S": "mock-discord-username"}},
+        ExpressionAttributeNames={"#pk": "discord_user_id"},
+        ExpressionAttributeValues={":pk": {"S": "mock-discord-user-id"}},
         Limit=1,
-        IndexName="discord-username-index",
+        IndexName="discord-lookup-index",
+    )
+
+
+@pytest.mark.parametrize(
+    "ddb_items, expected",
+    [
+        ([], None),
+        ([MOCK_DDB_ITEM], LookupFields(user="mock-user")),
+    ],
+)
+def test_lookup_by_github(mock_dynamodb_client, state_interface, ddb_items, expected):
+    mock_dynamodb_client.query.return_value = {"Items": ddb_items}
+
+    actual = state_interface.lookup_by_github("mock-github-user-id")
+
+    assert actual == expected
+    mock_dynamodb_client.query.assert_called_once_with(
+        TableName="mock-table-name",
+        KeyConditionExpression="#pk = :pk",
+        ExpressionAttributeNames={"#pk": "github_user_id"},
+        ExpressionAttributeValues={":pk": {"S": "mock-github-user-id"}},
+        Limit=1,
+        IndexName="github-lookup-index",
     )
 
 
@@ -173,6 +199,6 @@ def test_update_state(mock_dynamodb_client, state_interface):
             ":ac": {"N": "1"},
         },
         UpdateExpression="SET #ab = :ab, #ac = :ac + :one",
-        ConditionExpression="#ac = :ac",
+        ConditionExpression="attribute_not_exists(#ac) OR #ac = :ac",
         ReturnValues="ALL_NEW",
     )

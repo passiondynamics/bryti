@@ -47,15 +47,19 @@ ISOUTCDatetime = Annotated[
 ]
 
 
+class LookupFields(BaseModel):
+    user: str
+    twitch_user_id: Optional[str] = None
+    discord_user_id: Optional[str] = None
+    github_user_id: Optional[str] = None
+
+
 class DeathState(BaseModel):
     count: int
     last_timestamp: ISOUTCDatetime
 
 
-class State(BaseModel):
-    user: str
-    twitch_username: Optional[str] = None
-    discord_username: Optional[str] = None
+class State(LookupFields):
     members: Dict[str, Permission] = {}
     deaths: Optional[DeathState] = None
     version: int = 0

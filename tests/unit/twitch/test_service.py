@@ -10,6 +10,7 @@ from unittest.mock import (
 )
 
 from src.common.state_models import (
+    LookupFields,
     Permission,
     State,
 )
@@ -67,17 +68,17 @@ DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE = {
 
 MOCK_STREAM_ONLINE_EVENT = {
     "broadcaster_user_id": "mock-broadcaster-id",
-    "broadcaster_user_login": "mock-login",
-    "broadcaster_user_name": "mock-name",
+    "broadcaster_user_login": "mock-broadcaster-login",
+    "broadcaster_user_name": "mock-broadcaster-name",
     "id": "mock-id",
     "type": "mock-type",
     "started_at": "mock-timestamp",
 }
 
 MOCK_STREAM_OFFLINE_EVENT = {
-    "broadcaster_user_id": "mock-id",
-    "broadcaster_user_login": "mock-login",
-    "broadcaster_user_name": "mock-name",
+    "broadcaster_user_id": "mock-broadcaster-id",
+    "broadcaster_user_login": "mock-broadcaster-login",
+    "broadcaster_user_name": "mock-broadcaster-name",
 }
 
 
@@ -88,7 +89,7 @@ def mock_api_interfaces():
 
 @pytest.fixture
 def twitch_service(mock_api_interfaces):
-    return TwitchService(mock_api_interfaces, "mock-user-id", "mock-command-prefix")
+    return TwitchService(mock_api_interfaces, "mock-user-id", "mock-command-prefix", None)
 
 
 @pytest.mark.parametrize(
@@ -201,7 +202,7 @@ def test_handle_chat_message_not_command_prefix(mock_resolve_command, twitch_ser
 
 
 @patch("src.twitch.service.resolve_command")
-def test_handle_chat_message_nonexistant_command(mock_resolve_command, twitch_service):
+def test_handle_chat_message_nonexistant_command(mock_resolve_command, mock_api_interfaces, twitch_service):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
     event.message.text = "!mock-command-prefix arg1 arg2 arg3"
     mock_resolve_command.return_value = (None, [])
@@ -209,6 +210,30 @@ def test_handle_chat_message_nonexistant_command(mock_resolve_command, twitch_se
     twitch_service.handle_chat_message(event)
 
     mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
+    mock_api_interfaces.twitch.send_chat_message.assert_called_with(
+        "mock-broadcaster-id",
+        "mock-user-id",
+        "Couldn't find that command!",
+        reply_message_id="mock-message-id",
+    )
+
+
+@patch("src.twitch.service.TwitchService.retrieve_event_context")
+@patch("src.twitch.service.resolve_command")
+def test_handle_chat_message_cannot_invoke(mock_resolve_command, mock_retrieve_event_context, mock_api_interfaces, twitch_service):
+    event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.message.text = "!mock-command-prefix arg1 arg2 arg3"
+    mock_command = MagicMock()
+    mock_resolve_command.return_value = (mock_command, ["arg2", "arg3"])
+    mock_state = MagicMock()
+    mock_retrieve_event_context.return_value = (False, mock_state, Permission.EVERYBODY)
+
+    twitch_service.handle_chat_message(event)
+
+    mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
+    mock_retrieve_event_context.assert_called_once_with(event)
+    mock_command.assert_not_called()
+    mock_api_interfaces.twitch.send_chat_message.assert_not_called()
 
 
 @patch("src.twitch.service.TwitchService.retrieve_event_context")
@@ -221,11 +246,12 @@ def test_handle_chat_message_bad_command(mock_resolve_command, mock_retrieve_eve
     mock_command_obj.execute.side_effect = TypeError
     mock_resolve_command.return_value = (mock_command, ["arg2", "arg3"])
     mock_state = MagicMock()
-    mock_retrieve_event_context.return_value = (mock_state, Permission.EVERYBODY)
+    mock_retrieve_event_context.return_value = (True, mock_state, Permission.EVERYBODY)
 
     twitch_service.handle_chat_message(event)
 
     mock_resolve_command.assert_called_once_with(["arg1", "arg2", "arg3"])
+    mock_retrieve_event_context.assert_called_once_with(event)
     mock_command.assert_called_once_with(mock_api_interfaces, mock_state, Permission.EVERYBODY)
     mock_command_obj.execute.assert_called_once_with("arg2", "arg3")
     mock_api_interfaces.twitch.send_chat_message.assert_called_with(
@@ -246,7 +272,7 @@ def test_handle_chat_message_valid_command(mock_resolve_command, mock_retrieve_e
     mock_command_obj.execute.return_value = "mock-reply"
     mock_resolve_command.return_value = (mock_command, ["arg2", "arg3"])
     mock_state = MagicMock()
-    mock_retrieve_event_context.return_value = (mock_state, Permission.EVERYBODY)
+    mock_retrieve_event_context.return_value = (True, mock_state, Permission.EVERYBODY)
 
     twitch_service.handle_chat_message(event)
 
@@ -262,35 +288,158 @@ def test_handle_chat_message_valid_command(mock_resolve_command, mock_retrieve_e
 
 
 @pytest.mark.parametrize(
-    "chatter_login, expected_permission",
+    "chatter_user_id, permission",
     [
-        ("mock-user-1", Permission.BROADCASTER),
-        ("mock-user-2", Permission.MODERATOR),
-        ("mock-user-3", Permission.EVERYBODY),
+        ("mock-broadcaster-id", Permission.BROADCASTER),
+        ("mock-chatter-id", Permission.EVERYBODY),
     ],
 )
-def test_retrieve_event_context(mock_api_interfaces, twitch_service, chatter_login, expected_permission):
+def test_retrieve_event_context_no_lookup(mock_api_interfaces, twitch_service, chatter_user_id, permission):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.chatter_user_id = chatter_user_id
 
-    def mock_get_user_by_twitch(twitch_username: str):
-        if twitch_username == "mock-broadcaster-login":
-            return "mock-user-1"
-        elif twitch_username == "mock-chatter-login":
-            return chatter_login
-
-    mock_api_interfaces.state_table.get_user_by_twitch.side_effect = mock_get_user_by_twitch
-    state = State(user="mock-user-1", members={"mock-user-2": Permission.MODERATOR})
-    mock_api_interfaces.state_table.get_state.return_value = state
-    expected = (state, expected_permission)
+    mock_api_interfaces.state_table.lookup_by_twitch.return_value = None
+    state = State(user="mock-broadcaster-login", twitch_user_id="mock-broadcaster-id")
+    expected = (True, state, permission)
 
     actual = twitch_service.retrieve_event_context(event)
 
     assert actual == expected
-    assert mock_api_interfaces.state_table.get_user_by_twitch.call_args_list == [
-        call("mock-broadcaster-login"),
-        call("mock-chatter-login"),
+    assert mock_api_interfaces.state_table.lookup_by_twitch.call_args_list == [
+        call("mock-broadcaster-id"),
+        call(chatter_user_id),
     ]
-    mock_api_interfaces.state_table.get_state.assert_called_once_with("mock-user-1")
+    mock_api_interfaces.state_table.get_state.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "chatter_user_id, permission",
+    [
+        ("mock-broadcaster-id", Permission.BROADCASTER),
+        ("mock-chatter-id", Permission.EVERYBODY),
+    ],
+)
+def test_retrieve_event_context_broadcaster_lookup(mock_api_interfaces, twitch_service, chatter_user_id, permission):
+    event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.chatter_user_id = chatter_user_id
+
+    def mock_lookup_by_twitch(twitch_user_id: str):
+        if twitch_user_id == "mock-broadcaster-id":
+            return LookupFields(user="mock-broadcaster-login")
+
+        return None
+
+    mock_api_interfaces.state_table.lookup_by_twitch.side_effect = mock_lookup_by_twitch
+    state = State(user="mock-broadcaster-login", twitch_user_id="mock-broadcaster-id")
+    mock_api_interfaces.state_table.get_state.return_value = state
+    expected = (True, state, permission)
+
+    actual = twitch_service.retrieve_event_context(event)
+
+    assert actual == expected
+    assert mock_api_interfaces.state_table.lookup_by_twitch.call_args_list == [
+        call("mock-broadcaster-id"),
+        call(chatter_user_id),
+    ]
+    mock_api_interfaces.state_table.get_state.assert_called_once_with("mock-broadcaster-login")
+
+
+@pytest.mark.parametrize(
+    "chatter_user_id, permission",
+    [
+        ("mock-broadcaster-id", Permission.BROADCASTER),
+        ("mock-chatter-id", Permission.EVERYBODY),
+    ],
+)
+def test_retrieve_event_context_chatter_lookup(mock_api_interfaces, twitch_service, chatter_user_id, permission):
+    event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.chatter_user_id = chatter_user_id
+
+    def mock_lookup_by_twitch(twitch_user_id: str):
+        if twitch_user_id == "mock-chatter-id":
+            return LookupFields(user="mock-chatter-login")
+
+        return None
+
+    mock_api_interfaces.state_table.lookup_by_twitch.side_effect = mock_lookup_by_twitch
+    state = State(user="mock-broadcaster-login", twitch_user_id="mock-broadcaster-id")
+    expected = (True, state, permission)
+
+    actual = twitch_service.retrieve_event_context(event)
+
+    assert actual == expected
+    assert mock_api_interfaces.state_table.lookup_by_twitch.call_args_list == [
+        call("mock-broadcaster-id"),
+        call(chatter_user_id),
+    ]
+    mock_api_interfaces.state_table.get_state.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "chatter_user_id, permission",
+    [
+        ("mock-broadcaster-id", Permission.BROADCASTER),
+        ("mock-chatter-id", Permission.EVERYBODY),
+        ("mock-chatter-id-2", Permission.MODERATOR),
+    ],
+)
+def test_retrieve_event_context_both_lookups(mock_api_interfaces, twitch_service, chatter_user_id, permission):
+    event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.chatter_user_id = chatter_user_id
+
+    def mock_lookup_by_twitch(twitch_user_id: str):
+        if twitch_user_id == "mock-broadcaster-id":
+            return LookupFields(user="mock-broadcaster-login")
+        elif twitch_user_id == "mock-chatter-id":
+            return LookupFields(user="mock-chatter-login")
+        elif twitch_user_id == "mock-chatter-id-2":
+            return LookupFields(user="mock-chatter-login-2")
+
+    mock_api_interfaces.state_table.lookup_by_twitch.side_effect = mock_lookup_by_twitch
+    state = State(user="mock-broadcaster-login", twitch_user_id="mock-broadcaster-id", members={"mock-chatter-login-2": Permission.MODERATOR})
+    mock_api_interfaces.state_table.get_state.return_value = state
+    expected = (True, state, permission)
+
+    actual = twitch_service.retrieve_event_context(event)
+
+    assert actual == expected
+    assert mock_api_interfaces.state_table.lookup_by_twitch.call_args_list == [
+        call("mock-broadcaster-id"),
+        call(chatter_user_id),
+    ]
+    mock_api_interfaces.state_table.get_state.assert_called_once_with("mock-broadcaster-login")
+
+
+@pytest.mark.parametrize(
+    "github_user_id, can_invoke",
+    [
+        ("mock-github-user-id", True),
+        ("mock-github-user-id-2", False),
+    ],
+)
+def test_retrieve_event_context_can_invoke(mock_api_interfaces, twitch_service, github_user_id, can_invoke):
+    event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
+    event.chatter_user_id = "mock-chatter-id"
+    twitch_service.assignee_ids = ["mock-github-user-id"]
+
+    def mock_lookup_by_twitch(twitch_user_id: str):
+        if twitch_user_id == "mock-chatter-id":
+            return LookupFields(user="mock-chatter-login", github_user_id=github_user_id)
+
+        return None
+
+    mock_api_interfaces.state_table.lookup_by_twitch.side_effect = mock_lookup_by_twitch
+    state = State(user="mock-broadcaster-login", twitch_user_id="mock-broadcaster-id")
+    expected = (can_invoke, state, Permission.EVERYBODY)
+
+    actual = twitch_service.retrieve_event_context(event)
+
+    assert actual == expected
+    assert mock_api_interfaces.state_table.lookup_by_twitch.call_args_list == [
+        call("mock-broadcaster-id"),
+        call("mock-chatter-id"),
+    ]
+    mock_api_interfaces.state_table.get_state.assert_not_called()
 
 
 def test_handle_revocation(twitch_service):

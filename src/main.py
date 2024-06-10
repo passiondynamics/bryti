@@ -54,6 +54,7 @@ twitch_service = TwitchService(
     api_interfaces,
     env_vars["TWITCH_USER_ID"],
     COMMAND_PREFIX,
+    env_vars["GITHUB_ASSIGNEE_IDS"],
 )
 
 

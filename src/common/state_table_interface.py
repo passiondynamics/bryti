@@ -9,7 +9,10 @@ from typing import (
     Optional,
 )
 
-from src.common.state_models import State
+from src.common.state_models import (
+    LookupFields,
+    State,
+)
 
 
 def ddb_to_dict(item: dict) -> dict:
@@ -76,36 +79,37 @@ class StateTableInterface:
         response = self.dynamodb_client.query(**query_args)
         return [ddb_to_dict(item) for item in response["Items"]]
 
-    # TODO: use Twitch user ID instead (bc not mutable).
-    def get_user_by_twitch(self, twitch_username: str) -> Optional[str]:
+    def _lookup(self, index_name: str, key: str, value: str) -> Optional[LookupFields]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Twitch username.
-
-        :param twitch_username: The Twitch username of the user to lookup.
-        :return: The corresponding user primary key.
+        Helper to query a state table lookup index, to get the corresponding user primary key + IDs for a given platform user ID.
         """
 
-        users = self._query(
-            "twitch_username",
-            twitch_username,
-            index_name="twitch-username-index",
-        )
-        return users[0]["user"] if len(users) > 0 else None
+        users = self._query(key, value, index_name=index_name)
+        if len(users) == 0:
+            return None
 
-    def get_user_by_discord(self, discord_username: str) -> Optional[str]:
+        return LookupFields.model_validate(users[0])
+
+    def lookup_by_twitch(self, twitch_user_id: str) -> Optional[LookupFields]:
         """
-        Queries the state table to lookup the corresponding user primary key for a given Discord username.
-
-        :param discord_username: The Discord username of the user to lookup.
-        :return: The corresponding user primary key.
+        Looks up a user by a Twitch user ID.
         """
 
-        users = self._query(
-            "discord_username",
-            discord_username,
-            index_name="discord-username-index",
-        )
-        return users[0]["user"] if len(users) > 0 else None
+        return self._lookup("twitch-lookup-index", "twitch_user_id", twitch_user_id)
+
+    def lookup_by_discord(self, discord_user_id: str) -> Optional[LookupFields]:
+        """
+        Looks up a user by a Discord user ID.
+        """
+
+        return self._lookup("discord-lookup-index", "discord_user_id", discord_user_id)
+
+    def lookup_by_github(self, github_user_id: str) -> Optional[LookupFields]:
+        """
+        Looks up a user by a Discord user ID.
+        """
+
+        return self._lookup("github-lookup-index", "github_user_id", github_user_id)
 
     def get_state(self, user: str) -> Optional[State]:
         """
@@ -144,7 +148,9 @@ class StateTableInterface:
                 if n == "version":
                     # Increment the version of the item.
                     update_expressions.append(attribute_expression + " + :one")
-                    condition_expression = attribute_expression
+                    condition_expression = (
+                        f"attribute_not_exists({an}) OR {attribute_expression}"
+                    )
                 else:
                     update_expressions.append(attribute_expression)
 

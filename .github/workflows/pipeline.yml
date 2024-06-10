@@ -5,6 +5,12 @@ on:
     branches:
       - main
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - assigned
+      - unassigned
     branches:
       - main
 
@@ -24,17 +30,24 @@ jobs:
           rn="${{github.event.repository.name}}"
           pi="${{github.event.repository.owner.login}}.$rn.${{github.run_id}}.${{github.run_attempt}}"
           af="artifact-$pi.zip"
-          [ "${{github.event_name}}" == "push" ] && de="prod" || de="dev"
+          if [ "${{github.event_name}}" == "push" ]; then
+              de="prod"
+              gai="null"
+          else
+              de="dev"
+              gai=$(jq -cn '["${{github.event.pull_request.user.id}}"] + [${{toJSON(github.event.pull_request.assignees)}}[].id | tostring] | unique')
+          fi
           abk="$de/$rn/$af"
 
           echo "[*] Pipeline vars:"
-          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\n" | tee -a "$GITHUB_OUTPUT"
+          printf "artifact_filename=$af\nartifact_bucket_key=$abk\ndeployment_env=$de\npipeline_id=$pi\nrepository_name=$rn\ngithub_assignee_ids=$gai\n" | tee -a "$GITHUB_OUTPUT"
     outputs:
       artifact_filename: ${{steps.pipeline_vars.outputs.artifact_filename}}
       artifact_bucket_key: ${{steps.pipeline_vars.outputs.artifact_bucket_key}}
       deployment_env: ${{steps.pipeline_vars.outputs.deployment_env}}
       repository_name: ${{steps.pipeline_vars.outputs.repository_name}}
       pipeline_id: ${{steps.pipeline_vars.outputs.pipeline_id}}
+      github_assignee_ids: ${{steps.pipeline_vars.outputs.github_assignee_ids}}
   build:
     name: Build
     needs: init
@@ -112,8 +125,8 @@ jobs:
       - name: Write env vars to output
         id: write_env_vars
         run: |
-          # Use jq to create ENV_VARS w/ env
-          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}"}')
+          # Use jq to create ENV_VARS w/ env and PR author details.
+          export ENV_VARS=$(jq -cn '${{toJSON(vars)}} + {"ENV": "${{needs.init.outputs.deployment_env}}", "GITHUB_ASSIGNEE_IDS": ${{needs.init.outputs.github_assignee_ids}}}')
           python src/config.py --no-pretty
           echo "env_vars=$(cat env.json)" | tee -a "$GITHUB_OUTPUT"
     outputs:
