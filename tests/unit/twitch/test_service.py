@@ -204,7 +204,7 @@ def test_handle_chat_message_not_command_prefix(mock_resolve_command, twitch_ser
 @patch("src.twitch.service.resolve_command")
 def test_handle_chat_message_nonexistant_command(mock_resolve_command, mock_api_interfaces, twitch_service):
     event = TwitchChannelChatMessage(**DEFAULT_MOCK_CHANNEL_CHAT_MESSAGE)
-    event.message.text = "!mock-command-prefix arg1 arg2 arg3"
+    event.message.text = " !mock-command-prefix arg1 arg2 arg3  "
     mock_resolve_command.return_value = (None, [])
 
     twitch_service.handle_chat_message(event)

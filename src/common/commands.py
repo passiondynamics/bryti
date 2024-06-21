@@ -58,12 +58,14 @@ class AbstractDeathsCommand(AbstractCommand):
         deaths = self.state.deaths
         reply = "No deaths yet!"
         if deaths is not None and deaths.count != 0:
+            # Create a relative time string.
             time_since = self.timestamp - deaths.last_timestamp
             s = time_since.seconds % 60
             m = time_since.seconds // 60 % 60
             h = time_since.seconds // 3600
             d = time_since.days
 
+            # Consecutive conditions to prevent "0"s from being shown.
             time_since_str = ""
             if s > 0:
                 time_since_str = f"{s}s{time_since_str}"
