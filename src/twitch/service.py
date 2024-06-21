@@ -118,7 +118,7 @@ class TwitchService:
         Handle a chat message event by, if the message is a command invocation, attempting to execute it.
         """
         # Check if it matches the configured command prefix.
-        split_msg = event.message.text.lower().split()
+        split_msg = event.message.text.lower().strip().split()
         if len(split_msg) == 0 or split_msg[0] != self.command_prefix:
             return
 

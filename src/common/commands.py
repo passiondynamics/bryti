@@ -30,6 +30,7 @@ class AbstractCommand(ABC):
         self.interfaces = interfaces
         self.state = state
         self.permission = permission
+        self.timestamp = datetime.now(tz=timezone.utc)
 
     @abstractmethod
     def execute(self) -> str:
@@ -45,9 +46,8 @@ class StatusCommand(AbstractCommand):
     """
 
     def execute(self) -> str:
-        now = datetime.now(tz=timezone.utc)
-        now_str = now.strftime(DATETIME_FMT)
-        return f"Ok at {now_str}!"
+        timestamp_str = self.timestamp.strftime(DATETIME_FMT)
+        return f"Ok at {timestamp_str}!"
 
 
 # --- deaths ---
@@ -58,8 +58,29 @@ class AbstractDeathsCommand(AbstractCommand):
         deaths = self.state.deaths
         reply = "No deaths yet!"
         if deaths is not None and deaths.count != 0:
-            timestamp_str = deaths.last_timestamp.strftime(DATETIME_FMT)
-            reply = f"Death count: {deaths.count} | Last death: {timestamp_str}"
+            # Create a relative time string.
+            time_since = self.timestamp - deaths.last_timestamp
+            s = time_since.seconds % 60
+            m = time_since.seconds // 60 % 60
+            h = time_since.seconds // 3600
+            d = time_since.days
+
+            # Consecutive conditions to prevent "0"s from being shown.
+            time_since_str = ""
+            if s > 0:
+                time_since_str = f"{s}s{time_since_str}"
+            if m > 0:
+                time_since_str = f"{m}m{time_since_str}"
+            if h > 0:
+                time_since_str = f"{h}h{time_since_str}"
+            if d > 0:
+                time_since_str = f"{d}d{time_since_str}"
+            if time_since_str:
+                time_since_str += " ago"
+            else:
+                time_since_str = "just now"
+
+            reply = f"Death count: {deaths.count} | Last death: {time_since_str}"
 
         return reply
 
@@ -85,16 +106,17 @@ class DeathsAddCommand(AbstractDeathsCommand):
             return "You don't have permissions for that!"
 
         deaths = self.state.deaths
-        now = datetime.now(tz=timezone.utc)
         if deaths is None:
-            self.state.deaths = DeathState(count=1, last_timestamp=now)
-        elif (now - deaths.last_timestamp).total_seconds() <= self.DEDUP_WINDOW_S:
+            self.state.deaths = DeathState(count=1, last_timestamp=self.timestamp)
+        elif (
+            self.timestamp - deaths.last_timestamp
+        ).total_seconds() <= self.DEDUP_WINDOW_S:
             return (
                 "It's been too soon since they last died! Are you sure they died again?"
             )
         else:
             deaths.count += 1
-            deaths.last_timestamp = now
+            deaths.last_timestamp = self.timestamp
 
         self.state = self.interfaces.state_table.update_state(self.state)
         return self._generate_reply()
@@ -111,7 +133,7 @@ class DeathsSetCommand(AbstractDeathsCommand):
 
         self.state.deaths = DeathState(
             count=deaths,
-            last_timestamp=datetime.now(tz=timezone.utc),
+            last_timestamp=self.timestamp,
         )
 
         self.state = self.interfaces.state_table.update_state(self.state)
@@ -123,6 +145,7 @@ class DeathsSetCommand(AbstractDeathsCommand):
 
 class TwitchConnectCommand(AbstractCommand):
     def execute(self) -> str:
+        # TODO: generate URL for access.
         return "Not implemented yet!"
 
 
