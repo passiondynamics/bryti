@@ -108,7 +108,9 @@ class DeathsAddCommand(AbstractDeathsCommand):
         deaths = self.state.deaths
         if deaths is None:
             self.state.deaths = DeathState(count=1, last_timestamp=self.timestamp)
-        elif (self.timestamp - deaths.last_timestamp).total_seconds() <= self.DEDUP_WINDOW_S:
+        elif (
+            self.timestamp - deaths.last_timestamp
+        ).total_seconds() <= self.DEDUP_WINDOW_S:
             return (
                 "It's been too soon since they last died! Are you sure they died again?"
             )
