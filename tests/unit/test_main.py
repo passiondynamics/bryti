@@ -49,8 +49,9 @@ MOCK_DISCORD_EVENT = {
 
 @patch("src.discord.service.DiscordService.handle_event")
 @patch("src.twitch.service.TwitchService.handle_event")
+@patch("src.twitch.interface.TwitchInterface")
 @patch("boto3.client")
-def test_bryti_handler_twitch(_mock_boto3_client, mock_twitch_handle_event, mock_discord_handle_event):
+def test_bryti_handler_twitch(_mock_boto3_client, _mock_twitch_interface, mock_twitch_handle_event, mock_discord_handle_event):
     # Local import here to patch global variables/imports in `main.py` first.
     from src import main
 
@@ -76,8 +77,9 @@ def test_bryti_handler_twitch(_mock_boto3_client, mock_twitch_handle_event, mock
 
 @patch("src.discord.service.DiscordService.handle_event")
 @patch("src.twitch.service.TwitchService.handle_event")
+@patch("src.twitch.interface.TwitchInterface")
 @patch("boto3.client")
-def test_bryti_handler_twitch_signature_mismatch(_mock_boto3_client, mock_twitch_handle_event, mock_discord_handle_event):
+def test_bryti_handler_twitch_signature_mismatch(_mock_boto3_client, _mock_twitch_interface, mock_twitch_handle_event, mock_discord_handle_event):
     from src import main
 
     mock_twitch_handle_event.side_effect = TwitchSignatureMismatchError()
@@ -98,8 +100,9 @@ def test_bryti_handler_twitch_signature_mismatch(_mock_boto3_client, mock_twitch
 
 @patch("src.discord.service.DiscordService.handle_event")
 @patch("src.twitch.service.TwitchService.handle_event")
+@patch("src.twitch.interface.TwitchInterface")
 @patch("boto3.client")
-def test_bryti_handler_discord(_mock_boto3_client, mock_twitch_handle_event, mock_discord_handle_event):
+def test_bryti_handler_discord(_mock_boto3_client, _mock_twitch_interface, mock_twitch_handle_event, mock_discord_handle_event):
     from src import main
 
     mock_discord_handle_event.return_value = Response(
@@ -124,8 +127,9 @@ def test_bryti_handler_discord(_mock_boto3_client, mock_twitch_handle_event, moc
 
 @patch("src.discord.service.DiscordService.handle_event")
 @patch("src.twitch.service.TwitchService.handle_event")
+@patch("src.twitch.interface.TwitchInterface")
 @patch("boto3.client")
-def test_bryti_handler_twitch_signature_mismatch(_mock_boto3_client, mock_twitch_handle_event, mock_discord_handle_event):
+def test_bryti_handler_twitch_signature_mismatch(_mock_boto3_client, _mock_twitch_interface, mock_twitch_handle_event, mock_discord_handle_event):
     from src import main
 
     mock_discord_handle_event.side_effect = DiscordSignatureMismatchError()
