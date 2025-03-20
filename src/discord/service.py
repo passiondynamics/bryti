@@ -20,17 +20,18 @@ class DiscordSignatureMismatchError(BadSignatureError):
 class DiscordService:
     def __init__(
         self,
-#        api_interfaces: APIInterfaces,
-#        user_id: str,
+        # api_interfaces: APIInterfaces,
+        # user_id: str,
         discord_app_public_key: str,
-#        command_prefix: str,
-#        assignee_ids: List[str],
+        # command_prefix: str,
+        # assignee_ids: List[str],
     ):
-#        self.api_interfaces = api_interfaces
-#        self.user_id = user_id
+        # self.api_interfaces = api_interfaces
+        # self.user_id = user_id
         self.discord_app_public_key = discord_app_public_key
-#        self.command_prefix = f"!{command_prefix}"
-#        self.assignee_ids = assignee_ids
+
+    # self.command_prefix = f"!{command_prefix}"
+    # self.assignee_ids = assignee_ids
 
     def handle_event(self, headers: DiscordHeaders, body: str) -> Response:
         """

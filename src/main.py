@@ -63,10 +63,10 @@ twitch_service = TwitchService(
 )
 
 discord_service = DiscordService(
-#    api_interfaces,
+    # api_interfaces,
     env_vars["DISCORD_APP_PUBLIC_KEY"],
-#    COMMAND_PREFIX,
-#    env_vars["GITHUB_ASSIGNEE_IDS"],
+    # COMMAND_PREFIX,
+    # env_vars["GITHUB_ASSIGNEE_IDS"],
 )
 
 
@@ -114,7 +114,9 @@ def unknown_event_source(e: UnknownEventSourceError) -> Response:
 
 
 @app.exception_handler([TwitchSignatureMismatchError, DiscordSignatureMismatchError])
-def on_signature_mismatch(e: TwitchSignatureMismatchError | DiscordSignatureMismatchError) -> Response:
+def on_signature_mismatch(
+    e: TwitchSignatureMismatchError | DiscordSignatureMismatchError,
+) -> Response:
     logger.exception(e)
     return Response(
         status_code=HTTPStatus.FORBIDDEN,
