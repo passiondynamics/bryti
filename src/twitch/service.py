@@ -1,5 +1,4 @@
 from aws_lambda_powertools.event_handler import (
-    APIGatewayHttpResolver,
     Response,
     content_types,
 )
@@ -198,6 +197,7 @@ class TwitchService:
         return can_invoke, state, permission
 
     def handle_stream_event(self, event: TwitchStreamOnline | TwitchStreamOffline):
+        # TODO: Send DeathsInfoCommand.
         pass
 
     def handle_revocation(self, body: str) -> Response:

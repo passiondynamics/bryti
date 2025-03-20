@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 aws-lambda-powertools = {extras = ["aws-sdk"], version = "*"}
 boto3 = "*"
+pynacl = "*"
 pydantic = "*"
 requests = "*"
 

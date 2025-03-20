@@ -17,6 +17,11 @@ from typing import (
 from src.common.api_interfaces import APIInterfaces
 from src.common.state_table_interface import StateTableInterface
 from src.config import load_env_vars
+from src.discord.models import DiscordHeaders
+from src.discord.service import (
+    DiscordService,
+    DiscordSignatureMismatchError,
+)
 from src.twitch.interface import TwitchInterface
 from src.twitch.models import TwitchHeaders
 from src.twitch.service import (
@@ -57,6 +62,13 @@ twitch_service = TwitchService(
     env_vars["GITHUB_ASSIGNEE_IDS"],
 )
 
+discord_service = DiscordService(
+#    api_interfaces,
+    env_vars["DISCORD_APP_PUBLIC_KEY"],
+#    COMMAND_PREFIX,
+#    env_vars["GITHUB_ASSIGNEE_IDS"],
+)
+
 
 # --- Main logic ---
 
@@ -68,8 +80,9 @@ class UnknownEventSourceError(Exception):
 @app.post("/bryti")
 def bryti_handler() -> Response:
     # Determine event source by request headers.
+    headers = app.current_event.headers
     try:
-        twitch_headers = TwitchHeaders.model_validate(app.current_event.headers)
+        twitch_headers = TwitchHeaders.model_validate(headers)
         return twitch_service.handle_event(
             twitch_headers,
             app.current_event.decoded_body,
@@ -77,7 +90,14 @@ def bryti_handler() -> Response:
     except ValidationError:
         pass
 
-    # TODO: implement Discord service.
+    try:
+        discord_headers = DiscordHeaders.model_validate(headers)
+        return discord_service.handle_event(
+            discord_headers,
+            app.current_event.decoded_body,
+        )
+    except ValidationError:
+        pass
 
     # If no matching event source found, raise an error.
     raise UnknownEventSourceError
@@ -93,8 +113,8 @@ def unknown_event_source(e: UnknownEventSourceError) -> Response:
     )
 
 
-@app.exception_handler(TwitchSignatureMismatchError)
-def on_signature_mismatch(e: TwitchSignatureMismatchError) -> Response:
+@app.exception_handler([TwitchSignatureMismatchError, DiscordSignatureMismatchError])
+def on_signature_mismatch(e: TwitchSignatureMismatchError | DiscordSignatureMismatchError) -> Response:
     logger.exception(e)
     return Response(
         status_code=HTTPStatus.FORBIDDEN,
