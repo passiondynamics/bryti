@@ -221,11 +221,11 @@ COMMAND_TREE = {
         "add": DeathsAddCommand,
         "set": DeathsSetCommand,
     },
-    # "crimes": {
-    #     None: CrimesInfoCommand,
-    #     "add": CrimesAddCommand,
-    #     "set": CrimesSetCommand,
-    # },
+    "crimes": {
+        None: CrimesInfoCommand,
+        "add": CrimesAddCommand,
+        "set": CrimesSetCommand,
+    },
     "twitch": {
         "connect": TwitchConnectCommand,
     },
