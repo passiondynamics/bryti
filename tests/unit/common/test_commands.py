@@ -11,6 +11,9 @@ from src.common.commands import (
     DeathsInfoCommand,
     DeathsAddCommand,
     DeathsSetCommand,
+    CrimesInfoCommand,
+    CrimesAddCommand,
+    CrimesSetCommand,
     TwitchConnectCommand,
     resolve_command,
 )
@@ -156,6 +159,74 @@ def test_deaths_set_command(mock_datetime, mock_api_interfaces, mock_state):
     actual = DeathsSetCommand(mock_api_interfaces, mock_state, Permission.BROADCASTER).execute(7)
 
     assert actual == "Death count: 7 | Last death: just now"
+    mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)
+
+
+def test_crimes_info_command_no_crimes(mock_api_interfaces, mock_state):
+    actual = CrimesInfoCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
+    assert actual == "No crimes yet!"
+
+
+@patch("src.common.commands.datetime")
+def test_crimes_info_command_with_crimes(mock_datetime, mock_api_interfaces, mock_state):
+    mock_datetime.now.return_value = datetime(2006, 1, 6, 18, 6, 6, tzinfo=timezone.utc)
+    mock_state.crimes = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+
+    actual = CrimesInfoCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
+
+    assert actual == f"Crime count: 4 | Last crime: 4d3h2m1s ago"
+
+
+@patch("src.common.commands.datetime")
+def test_crimes_add_command_within_window(mock_datetime, mock_api_interfaces, mock_state):
+    mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 14, tzinfo=timezone.utc)
+    mock_state.crimes = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+
+    actual = CrimesAddCommand(mock_api_interfaces, mock_state, Permission.BROADCASTER).execute()
+
+    assert actual == "It's been too soon since they last committed a crime! Did they really commit another?"
+
+
+@patch("src.common.commands.datetime")
+def test_crimes_add_command(mock_datetime, mock_api_interfaces, mock_state):
+    mock_datetime.now.return_value = datetime(2024, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
+    mock_state.crimes = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    updated_state = State(
+        user="mock-user",
+        crimes=CounterState(
+            count=5,
+            last_timestamp="2024-01-02T15:04:05Z",
+        ),
+    )
+    mock_api_interfaces.state_table.update_state.return_value = updated_state
+
+    actual = CrimesAddCommand(mock_api_interfaces, mock_state, Permission.BROADCASTER).execute()
+
+    assert actual == "Crime count: 5 | Last crime: just now"
+    mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)
+
+
+def test_crimes_set_command_bad_permissions(mock_api_interfaces, mock_state):
+    actual = CrimesSetCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute(0)
+    assert actual == "You don't have permissions for that!"
+
+
+@patch("src.common.commands.datetime")
+def test_crimes_set_command(mock_datetime, mock_api_interfaces, mock_state):
+    mock_datetime.now.return_value = datetime(2024, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
+    mock_state.crimes = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    updated_state = State(
+        user="mock-user",
+        crimes=CounterState(
+            count=7,
+            last_timestamp="2024-01-02T15:04:05Z",
+        ),
+    )
+    mock_api_interfaces.state_table.update_state.return_value = updated_state
+
+    actual = CrimesSetCommand(mock_api_interfaces, mock_state, Permission.BROADCASTER).execute(7)
+
+    assert actual == "Crime count: 7 | Last crime: just now"
     mock_api_interfaces.state_table.update_state.assert_called_once_with(updated_state)
 
 
