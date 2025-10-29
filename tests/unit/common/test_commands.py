@@ -15,7 +15,7 @@ from src.common.commands import (
     resolve_command,
 )
 from src.common.state_models import (
-    DeathState,
+    CounterState,
     State,
 )
 
@@ -45,7 +45,7 @@ def test_deaths_info_command_no_deaths_state(mock_api_interfaces, mock_state):
     actual = DeathsInfoCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
     assert actual == "No deaths yet!"
 
-    mock_state.deaths = DeathState(count=0, last_timestamp="2006-01-02T15:04:05Z")
+    mock_state.deaths = CounterState(count=0, last_timestamp="2006-01-02T15:04:05Z")
     actual = DeathsInfoCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
     assert actual == "No deaths yet!"
 
@@ -64,7 +64,7 @@ def test_deaths_info_command_no_deaths_state(mock_api_interfaces, mock_state):
 @patch("src.common.commands.datetime")
 def test_deaths_info_command_with_deaths(mock_datetime, mock_api_interfaces, mock_state, datetime_args, time_since_str):
     mock_datetime.now.return_value = datetime(*datetime_args, tzinfo=timezone.utc)
-    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    mock_state.deaths = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
 
     actual = DeathsInfoCommand(mock_api_interfaces, mock_state, Permission.EVERYBODY).execute()
 
@@ -83,7 +83,7 @@ def test_deaths_add_command_bad_permissions(mock_api_interfaces, mock_state):
 @patch("src.common.commands.datetime")
 def test_deaths_add_command_within_window(mock_datetime, mock_api_interfaces, mock_state, permission):
     mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 14, tzinfo=timezone.utc)
-    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    mock_state.deaths = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
 
     actual = DeathsAddCommand(mock_api_interfaces, mock_state, permission).execute()
 
@@ -97,10 +97,10 @@ def test_deaths_add_command_within_window(mock_datetime, mock_api_interfaces, mo
 @patch("src.common.commands.datetime")
 def test_deaths_add_command(mock_datetime, mock_api_interfaces, mock_state, permission):
     mock_datetime.now.return_value = datetime(2024, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
-    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    mock_state.deaths = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
     updated_state = State(
         user="mock-user",
-        deaths=DeathState(
+        deaths=CounterState(
             count=5,
             last_timestamp="2024-01-02T15:04:05Z",
         ),
@@ -118,7 +118,7 @@ def test_deaths_add_command_no_deaths_state(mock_datetime, mock_api_interfaces, 
     mock_datetime.now.return_value = datetime(2006, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
     updated_state = State(
         user="mock-user",
-        deaths=DeathState(
+        deaths=CounterState(
             count=1,
             last_timestamp="2006-01-02T15:04:05Z",
         ),
@@ -143,10 +143,10 @@ def test_deaths_set_command_bad_permissions(mock_api_interfaces, mock_state, per
 @patch("src.common.commands.datetime")
 def test_deaths_set_command(mock_datetime, mock_api_interfaces, mock_state):
     mock_datetime.now.return_value = datetime(2024, 1, 2, 15, 4, 5, tzinfo=timezone.utc)
-    mock_state.deaths = DeathState(count=4, last_timestamp="2006-01-02T15:04:05Z")
+    mock_state.deaths = CounterState(count=4, last_timestamp="2006-01-02T15:04:05Z")
     updated_state = State(
         user="mock-user",
-        deaths=DeathState(
+        deaths=CounterState(
             count=7,
             last_timestamp="2024-01-02T15:04:05Z",
         ),
