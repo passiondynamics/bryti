@@ -1,5 +1,4 @@
 from aws_lambda_powertools.event_handler import (
-    APIGatewayHttpResolver,
     Response,
     content_types,
 )
